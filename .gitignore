@@ -6,7 +6,8 @@
 /data*
 /doc*
 
+*.doc*
 *.xls*
-*.htm*
 *.odt*
 *.ods*
+*.htm*
