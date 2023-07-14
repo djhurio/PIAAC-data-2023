@@ -1,0 +1,16 @@
+# Link sample data
+cd /home/djhurio/Dropbox/Darbs/PIAAC/PIAAC-data-2023
+ln -s /home/djhurio/Dropbox/Darbs/PIAAC/PIAAC-sample-2022/data data-sample
+
+
+Uzdevumi
+https://piaac.ets.org/portal/tasks/
+
+Final MS SDIF Codebook LVA
+https://piaac.ets.org/portal/final-ms-sdif-codebook-lva/
+
+Final MS Benchmark WIF and Codebook LVA
+https://piaac.ets.org/portal/final-ms-benchmark-wif-and-codebook-lva/
+
+Weighting QC Forms W-0 and W-1 LVA
+https://piaac.ets.org/portal/weighting-qc-forms-w-0-and-w-1-lva/
