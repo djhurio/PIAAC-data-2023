@@ -266,6 +266,21 @@
       ],
       "Hash": "14dc9f7a3c91ebb14ec5bb9208a07061"
     },
+    "purrr": {
+      "Package": "purrr",
+      "Version": "1.0.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "cli",
+        "lifecycle",
+        "magrittr",
+        "rlang",
+        "vctrs"
+      ],
+      "Hash": "d71c815267c640f17ddbf7f16144b4bb"
+    },
     "readr": {
       "Package": "readr",
       "Version": "2.1.4",
