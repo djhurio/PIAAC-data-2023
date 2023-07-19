@@ -57,16 +57,16 @@ dat_raking[calcage > 65, age_group := 10L]
 dat_raking[, .(.N, min(calcage), max(calcage)), keyby = .(age_group)]
 
 dat_raking[, rakedim1 := (gender - 1) * 10 + age_group]
-dat_raking[, .N, keyby = .(rakedim1, gender, age_group)]
+dat_raking[, iflg_rakedim1 := 0L]
+dat_raking[, .N, keyby = .(rakedim1, iflg_rakedim1, gender, age_group)]
 
 
 # Ethnicity
-
 dat_raking[, .N, keyby = .(a2_n02lvx)]
 
 dat_raking[a2_n02lvx %in% 1:10, rakedim2_init := a2_n02lvx]
-dat_raking[is.na(a2_n02lvx) | a2_n02lvx > 10, rakedim2_init := 10L]
-dat_raking[is.na(a2_n02lvx) | a2_n02lvx > 10, iflg_rakedim2 := 1L]
+dat_raking[, iflg_rakedim2 := as.integer(is.na(a2_n02lvx) | a2_n02lvx > 10)]
+dat_raking[as.logical(iflg_rakedim2), rakedim2_init := 10L]
 
 dat_raking[, rakedim2_init_label := factor(
   x = rakedim2_init,
@@ -74,24 +74,26 @@ dat_raking[, rakedim2_init_label := factor(
   labels = c("Latvian", "Russian", "Ukrainian", "Belorussian", "Estonian",
              "Lithuanian", "Polish", "Jewish", "Roma", "Other"))]
 
-dat_raking[, .N, keyby = .(rakedim2_init, rakedim2_init_label)]
+dat_raking[, .N, keyby = .(rakedim2_init, rakedim2_init_label, iflg_rakedim2)]
 
 dat_raking[, rakedim2 := rakedim2_init]
 dat_raking[, rakedim2_n := .N, by = .(rakedim2)]
 dat_raking[rakedim2_n < 30, rakedim2 := 10L]
-dat_raking[, .N, keyby = .(rakedim2_init, rakedim2_init_label, rakedim2)]
+dat_raking[, .N, keyby = .(rakedim2_init, rakedim2_init_label,
+                           rakedim2, iflg_rakedim2)]
 
 dat_raking[, rakedim2_n := NULL]
 
 # Country of birth
-
 dat_raking[, .N, keyby = .(a2_q03a, a2_q03blv)]
 
 dat_raking[a2_q03a == 1L, rakedim3_init := 1L]
-dat_raking[a2_q03a == 2L & a2_q03blv %in% 1:9, rakedim3_init := a2_q03blv + 1L]
-dat_raking[is.na(a2_q03a) | a2_q03a > 2L | (a2_q03a == 2L & a2_q03blv > 9),
-           rakedim3_init := 10L]
-dat_raking[, .N, keyby = .(rakedim3_init, a2_q03a, a2_q03blv)]
+dat_raking[a2_q03a == 2L & a2_q03blv %in% 1:9, rakedim3_init := 1L + a2_q03blv]
+dat_raking[, iflg_rakedim3 := as.integer(
+  is.na(a2_q03a) | a2_q03a > 2L | (a2_q03a == 2L & a2_q03blv > 9)
+)]
+dat_raking[as.logical(iflg_rakedim3), rakedim3_init := 10L]
+dat_raking[, .N, keyby = .(iflg_rakedim3, rakedim3_init, a2_q03a, a2_q03blv)]
 
 dat_raking[, rakedim3_init_label := factor(
   x = rakedim3_init,
@@ -102,18 +104,25 @@ dat_raking[, rakedim3_init_label := factor(
 dat_raking[, rakedim3 := rakedim3_init]
 dat_raking[, rakedim3_n := .N, by = .(rakedim3)]
 dat_raking[rakedim3_n < 30, rakedim3 := 10L]
-dat_raking[, .N, keyby = .(rakedim3_init, rakedim3_init_label, rakedim3)]
+dat_raking[, .N, keyby = .(iflg_rakedim3,
+                           rakedim3_init, rakedim3_init_label, rakedim3)]
 
 dat_raking[, rakedim3_n := NULL]
+
+
+dat_raking[, .N, keyby = .(rakedim1)]
+dat_raking[, .N, keyby = .(rakedim2)]
+dat_raking[, .N, keyby = .(rakedim3)]
+
+dat_raking[, .N, keyby = .(iflg_rakedim1, iflg_rakedim2, iflg_rakedim3)]
 
 
 # Save
 
 dat_raking_sel <- dat_raking[
   persid != "13611880019",
-  .(persid, rakedim1, rakedim2, rakedim3)
+  .(persid, rakedim1, rakedim2, rakedim3,
+    iflg_rakedim1, iflg_rakedim2, iflg_rakedim3)
 ]
 
 saveRDS(dat_raking_sel, "data/dat_raking_sel.rds")
-
-
