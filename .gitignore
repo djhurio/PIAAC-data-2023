@@ -6,6 +6,7 @@
 /data*
 /doc*
 /temp*
+/result*
 
 *.doc*
 *.xls*

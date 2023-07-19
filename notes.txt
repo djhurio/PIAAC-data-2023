@@ -1,6 +1,7 @@
 # Link sample data
 cd /home/djhurio/Dropbox/Darbs/PIAAC/PIAAC-data-2023
 ln -s /home/djhurio/Dropbox/Darbs/PIAAC/PIAAC-sample-2022/data data-sample
+ln -s /home/djhurio/Dropbox/Darbs/PIAAC/PIAAC-sample-2022/data2 data2-sample
 
 
 Uzdevumi
@@ -29,61 +30,70 @@ Viens gadījums, kur scqage == 39 un scqagerange == 39
 
 Aprēķināt:
 
-prob_overall_hh
-prob_overall_pers
-theor_hbwt
-theor_pbwt
+prob_overall_hh - done
+prob_overall_pers - done
+theor_hbwt - done
+theor_pbwt - done
 
 age_r
 impflgager
 gender_r
 
 completeflg
-trimgrps
+trimgrps - done
 
 curbobs1 (?)
 
-rakedim1
-rakedim2
-rakedim3
+rakedim1 - done
+rakedim2 - done
+rakedim3 - done
 
 persvar1 - Have you considered the education data collected from Screener?
+persvar2 (areavar6) - done
+persvar3 (areavar7) - done
+persvar4 (areavar8) - done
+persvar5 (areavar9) - done
 
 duvar_scrresp1
 duvar_scrresp2
-duvar_all1
-duvar_all2
+duvar_scrresp3 (areavar10) - done
 
-areavar1
-areavar2
-areavar3
-areavar4
-areavar5
+duvar_all1 - done
+duvar_all2 - done
 
-areavar6 in persvar# or duvar#
-areavar7 in persvar# or duvar#
-areavar8 in persvar# or duvar#
-areavar9 in persvar# or duvar#
-areavar10 in persvar# or duvar#
+areavar1 - done
+areavar2 - done
+areavar3 - done
+areavar4 - done
+areavar5 - done
 
 impflgag (?)
 impflgge (?)
 
 iflg_persvar1
+iflg_persvar2 - done
+iflg_persvar3 - done
+iflg_persvar4 - done
+iflg_persvar5 - done
 
 iflg_duvar_scrresp1
 iflg_duvar_scrresp2
-iflg_duvar_all1
-iflg_duvar_all2
+iflg_duvar_scrresp3 - done
+
+iflg_duvar_all1 - done
+iflg_duvar_all2 - done
 
 iflg_curbobs1 (?)
 
-iflg_areavar1
-iflg_areavar2
-iflg_areavar3
-iflg_areavar4
-iflg_areavar5
+iflg_areavar1 - done
+iflg_areavar2 - done
+iflg_areavar3 - done
+iflg_areavar4 - done
+iflg_areavar5 - done
 
 iflg_rakedim1
 iflg_rakedim2
 iflg_rakedim3
+
+
+Izdzēst persid=13611880019

@@ -1034,3 +1034,52 @@ dat_sdif_fieldw[, .N, keyby = .(iflg_rakedim6)]
 # Required if any values of RAKEDIM7 were imputed for weighting; 1 = value was imputed; 0 = not imputed.
 dat_sdif_fieldw[, .N, keyby = .(iflg_rakedim7)]
 
+
+# Data for WIF
+dat_sdif_fieldw[, .N, keyby = .(weightflg)]
+dat_sdif_fieldw[, .N, keyby = .(disp_cibq, disp_ds, weightflg)]
+
+
+dat_sdif_fieldw[
+  as.logical(weightflg),
+  .N,
+  keyby = .(ci_gender, gender, gender_r, impflgge)
+]
+
+dat_sdif_fieldw[
+  as.logical(weightflg),
+  .N,
+  keyby = .(ci_age)
+]
+
+dat_sdif_fieldw[
+  as.logical(weightflg),
+  .N,
+  keyby = .(calcage)
+]
+
+dat_sdif_fieldw[
+  as.logical(weightflg) & calcage > 65,
+  .N,
+  keyby = .(weightflg, ci_age, calcage)
+]
+
+dat_sdif_fieldw[
+  calcage > 65,
+  .(caseid, persid, dobyy, dobmm)
+][order(dobyy, dobmm)]
+
+
+dat_sdif_fieldw[
+  as.logical(weightflg),
+  .N,
+  keyby = .(age_r)
+]
+
+dat_sdif_raking <- dat_sdif_fieldw[
+  as.logical(weightflg),
+  .(caseid, persid, weightflg, gender, calcage)
+]
+
+saveRDS(object = dat_sdif_fieldw, file = "data/dat_sdif_fieldw.rds")
+saveRDS(object = dat_sdif_raking, file = "data/dat_sdif_raking.rds")
