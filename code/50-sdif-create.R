@@ -21,6 +21,9 @@ tab_sdif_variables <- read.xlsx(
 dat_sdif_sample <- fread("data2-sample/sample_piaac_sdif.csvy", yaml = TRUE) |>
   setnames(tolower)
 
+# SUBSAMP is recalculated to values 1, 2, 3
+dat_sdif_sample[, .N, keyby = .(subsamp)]
+dat_sdif_sample[, subsamp := NULL]
 
 # varnames to delete
 x <- setdiff(union(names(dat_sdif_sample), names(dat_raking)),
@@ -46,9 +49,8 @@ dat_sdif[, .N, keyby = .(numelg1, numsel1)]
 dat_sdif[, .N, keyby = .(numelg2, numsel2)]
 dat_sdif[, .N, keyby = .(numelg3, numsel3)]
 
+# Do not recalculate PROB_PERS
 dat_sdif[, .N, keyby = .(prob_pers)]
-dat_sdif[, .N, keyby = .(numelg1, numsel1, prob_pers)]
-dat_sdif[numelg1 > 0, prob_pers := round(numsel1 / numelg1, 12)]
 dat_sdif[, .N, keyby = .(numelg1, numsel1, prob_pers)]
 dat_sdif[weightflg == 1, .N, keyby = .(numelg1, numsel1, prob_pers)]
 

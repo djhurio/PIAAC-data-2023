@@ -119,8 +119,7 @@ dat_raking[, .N, keyby = .(iflg_rakedim1, iflg_rakedim2, iflg_rakedim3)]
 
 # Save
 
-dat_raking_sel <- dat_raking[
-  persid != "13611880019",
+dat_raking_sel <- dat_raking[,
   .(persid, rakedim1, rakedim2, rakedim3,
     iflg_rakedim1, iflg_rakedim2, iflg_rakedim3)
 ]
