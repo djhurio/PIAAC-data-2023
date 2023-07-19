@@ -79,3 +79,4 @@ fwrite(x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.csv",  yaml = F)
 fwrite(x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.csvy", yaml = T)
 openxlsx::write.xlsx(x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.xlsx",
                      overwrite = T)
+write_sav(data = dat_sdif, path = "result/CY2_Final_SDIF_LVA.sav")
