@@ -5,11 +5,17 @@ rm(list = ls())
 gc()
 source(".Rprofile")
 
-dat_sdif_fieldw <- readRDS(file = "data/dat_sdif_fieldw.rds")
+# dat_sdif_fieldw <- readRDS(file = "data/dat_sdif_fieldw.rds")
 dat_bq <- readRDS(file = "data/dat_bq.rds")
 
 dat_sdif_raking <- readRDS(file = "data/dat_sdif_raking.rds")
 dat_bq_raking <- readRDS(file = "data/dat_bq_raking.rds")
+
+dat_sdif_raking[, class(caseid)]
+dat_sdif_raking[, class(persid)]
+dat_bq[, class(persid)]
+dat_bq_raking[, class(persid)]
+
 
 dat_bq[, bq := TRUE]
 dat_bq_raking[, bq := TRUE]
@@ -26,12 +32,12 @@ dat_raking[, .N, keyby = .(bq)]
 dat_raking[is.na(bq), .(caseid, persid)]
 dat_raking[is.na(bq), caseid]
 
-dat_bq[, caseid := substr(persid, 1, 8)]
+dat_bq[, caseid := as.numeric(substr(persid, 1, 8))]
 dat_bq[, .(caseid, persid)]
 
-x <- dat_raking[is.na(bq), as.character(caseid)]
+x <- dat_raking[is.na(bq), caseid]
 
-dat_bq[caseid %chin% x, .(caseid, persid)]
+dat_bq[caseid %in% x, .(caseid, persid)]
 # dat_raking[is.na(bq),
 #            .(caseid, persid, disp_scr, disp_cibq, disp_ds, weightflg, bq)]
 
@@ -118,7 +124,6 @@ dat_raking[, .N, keyby = .(iflg_rakedim1, iflg_rakedim2, iflg_rakedim3)]
 
 
 # Save
-
 dat_raking_sel <- dat_raking[,
   .(persid, rakedim1, rakedim2, rakedim3,
     iflg_rakedim1, iflg_rakedim2, iflg_rakedim3)

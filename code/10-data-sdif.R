@@ -13,12 +13,24 @@ source(".Rprofile")
 dat_sdif_fieldw <- fread("data/SDIF/SDIF.csv", dec = ",") |>
   setnames(tolower)
 
+dat_sdif_fieldw[, class(caseid)]
+dat_sdif_fieldw[, class(persid)]
+dat_sdif_fieldw[, caseid := as.numeric(caseid)]
+dat_sdif_fieldw[, persid := as.numeric(persid)]
+dat_sdif_fieldw[, class(caseid)]
+dat_sdif_fieldw[, class(persid)]
+
+
 # # SPSS
 # dat_sdif_fieldw <- read_spss("data/SDIF/SDIF.sav") |>
 #   setDT() |> setnames(tolower)
 
 dat_sdif_sample <- fread("data-sample/sample_piaac_sdif.csv") |>
   setnames(tolower)
+
+dat_sdif_sample[, class(caseid)]
+dat_sdif_sample[, caseid := as.numeric(caseid)]
+dat_sdif_sample[, class(caseid)]
 
 anyDuplicated(dat_sdif_sample[, .(caseid)])
 anyDuplicated(dat_sdif_fieldw[, .(caseid, persid)])

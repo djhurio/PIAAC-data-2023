@@ -12,6 +12,10 @@ source(".Rprofile")
 # CSV
 dat_bq <- fread("data/BQ/BQ.csv", dec = ",") |> setnames(tolower)
 
+dat_bq[, class(persid)]
+dat_bq[, persid := as.numeric(persid)]
+dat_bq[, class(persid)]
+
 # Sex
 # A2_N02 - Vai respondents ir sieviete vai vīrietis?
 # Vaicājiet tikai tad, ja neesat drošs(-a).
