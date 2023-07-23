@@ -13,7 +13,12 @@ dat_scr <- read.xlsx(
 ) |> setDT() |> setnames(tolower)
 rm(fname)
 
-dat_scr
+# Final disposition code for household for screener
+names(dat_scr)
+grep("disp_scr", names(dat_scr), value = T)
+
+unique(dat_scr[, .(caseid, disp_scr)])[, .N, keyby = .(disp_scr)]
+unique(dat_scr[, .(caseid, disp_scr)])[disp_scr %in% 1:2, .N, keyby = .(disp_scr)]
 
 dat_scr[, class(caseid)]
 dat_scr[, class(persid)]
@@ -30,6 +35,7 @@ dat_scr[caseid %in% x, .N, keyby = .(caseid, persid)]
 # PERSVAR1: Education level collected from Screener
 # hihgEduCode
 dat_scr[, .N, keyby = .(hihgeducode)]
+dat_scr[disp_scr %in% 1:2, .N, keyby = .(hihgeducode)]
 #   1: Pamatizglītība vai zemāka
 #   2: Vidējā izglītība vai profesionālā/arodizglītība
 #   3: Augstākā izglītība
@@ -49,45 +55,58 @@ dat_scr_pers <- dat_scr[!is.na(persid),
                         .(persid, persvar1, iflg_persvar1)]
 saveRDS(object = dat_scr_pers, file = "data/dat_scr_pers.rds")
 
+
+
 # DUVAR_SCRRESP1: Household size
 # SCREENER_HHMEMBERS
-dat_scr[, .N, keyby = .(screener_hhmembers)]
+dat_scrresp1 <- dat_scr[disp_scr %in% 1:2,
+                        .(n = .N),
+                        keyby = .(caseid, disp_scr, screener_hhmembers)]
+dat_scrresp1
+dat_scrresp1[, .N, keyby = .(screener_hhmembers)]
+dat_scrresp1[, .N, keyby = .(as.numeric(screener_hhmembers))]
+dat_scrresp1[, .N, keyby = .(n)]
+dat_scrresp1[, .N, keyby = .(n, screener_hhmembers)]
+dat_scrresp1[, cor(n, as.numeric(screener_hhmembers))]
+# low cor because of 990
 
-dat_scr[!grepl("^[0-9]*$", screener_hhmembers), .N,
+dat_scrresp1[!grepl("^[0-9]*$", screener_hhmembers), .N,
         keyby = .(screener_hhmembers)]
-dat_scr[, iflg_duvar_scrresp1 := as.integer(
-  grepl("\\.", screener_hhmembers)
+dat_scrresp1[, iflg_duvar_scrresp1 := as.integer(
+  grepl("\\.", screener_hhmembers) | screener_hhmembers == "990"
 )]
-dat_scr[, .N, keyby = .(iflg_duvar_scrresp1)]
+dat_scrresp1[, .N, keyby = .(iflg_duvar_scrresp1)]
+dat_scrresp1[iflg_duvar_scrresp1 == 0, cor(n, as.numeric(screener_hhmembers))]
+# 0.96 OK
 
-dat_scr[, .N, keyby = .(
+dat_scrresp1[, .N, keyby = .(
   as.integer(stringr::str_extract(screener_hhmembers, "[0-9]+")),
   screener_hhmembers,
   iflg_duvar_scrresp1
 )]
 
-dat_scr[, screener_hhmembers_orig := screener_hhmembers]
-dat_scr[, screener_hhmembers := as.integer(
+dat_scrresp1[, screener_hhmembers_orig := screener_hhmembers]
+dat_scrresp1[, screener_hhmembers := as.integer(
   stringr::str_extract(screener_hhmembers, "[0-9]+")
 )]
-dat_scr[, .N, keyby = .(screener_hhmembers, screener_hhmembers_orig,
-                        iflg_duvar_scrresp1)]
+dat_scrresp1[, .N, keyby = .(screener_hhmembers, screener_hhmembers_orig,
+                             iflg_duvar_scrresp1)]
 
-dat_scr[screener_hhmembers < 99L, duvar_scrresp1 := screener_hhmembers]
+dat_scrresp1[screener_hhmembers < 99L, duvar_scrresp1 := screener_hhmembers]
+dat_scrresp1[screener_hhmembers >= 99L, duvar_scrresp1 := n]
 
-dat_scr[, .N, keyby = .(duvar_scrresp1)]
-dat_scr[, .N, keyby = .(duvar_scrresp1, iflg_duvar_scrresp1)]
-dat_scr[, .N, keyby = .(duvar_scrresp1, iflg_duvar_scrresp1,
-                        screener_hhmembers_orig)]
-dat_scr[, .N, keyby = .(caseid, duvar_scrresp1, iflg_duvar_scrresp1)]
-# OK
+dat_scrresp1[, .N, keyby = .(duvar_scrresp1)]
+dat_scrresp1[, .N, keyby = .(duvar_scrresp1, iflg_duvar_scrresp1)]
+dat_scrresp1[, .N, keyby = .(duvar_scrresp1, iflg_duvar_scrresp1,
+                             screener_hhmembers_orig)]
+dat_scrresp1[, .N, keyby = .(caseid, duvar_scrresp1, iflg_duvar_scrresp1)]
 
 
 # DUVAR_SCRRESP2: Indicator if a child in a household
 # age
-dat_scr[, .N, keyby = .(age_reg)]
-dat_scr[, .N, keyby = .(age)]
-dat_scr[, .N, keyby = .(agerange)]
+dat_scr[disp_scr %in% 1:2, .N, keyby = .(age_reg)]
+dat_scr[disp_scr %in% 1:2, .N, keyby = .(age)]
+dat_scr[disp_scr %in% 1:2, .N, keyby = .(agerange)]
 
 dat_scr[, class(age)]
 dat_scr[, .N, keyby = .(nchar(age))]
@@ -98,11 +117,11 @@ dat_scr[nchar(age) > 3, .(age, dobyy, dobmm,
 dat_scr[!grepl("^[0-9]*$", age), .N, keyby = .(age)]
 
 dat_scr[, iflg_duvar_scrresp2 := as.integer(
-  grepl("\\.", age) | (!is.na(age) & nchar(age) > 3)
+  is.na(age) | grepl("\\.", age) | (!is.na(age) & nchar(age) > 3)
 )]
-dat_scr[, .N, keyby = .(iflg_duvar_scrresp2)]
+dat_scr[disp_scr %in% 1:2, .N, keyby = .(iflg_duvar_scrresp2)]
 
-dat_scr[, .N, keyby = .(
+dat_scr[disp_scr %in% 1:2, .N, keyby = .(
   age,
   as.integer(
     map_chr(
@@ -132,25 +151,30 @@ dat_scr[iflg_duvar_scrresp2 == 1, .N,
 
 dat_scr[, .N, keyby = .(!is.na(persid), !is.na(age))]
 
-# dat_scr[, duvar_scrresp2 := NULL]
-dat_scr[, duvar_scrresp2 := as.integer(any(age < 16)), by = .(caseid)]
-dat_scr[, iflg_duvar_scrresp2 := max(iflg_duvar_scrresp2), by = .(caseid)]
+dat_scrresp2 <- dat_scr[
+  disp_scr %in% 1:2,
+  .(duvar_scrresp2 = as.integer(any(age < 16, na.rm = TRUE)),
+    iflg_duvar_scrresp2 = max(iflg_duvar_scrresp2)),
+  by = .(caseid, disp_scr)
+]
+dat_scrresp2
 
-dat_scr[, .N, keyby = .(duvar_scrresp2)]
-dat_scr[, .N, keyby = .(duvar_scrresp2, iflg_duvar_scrresp2)]
-dat_scr[duvar_scrresp2 == 1, .(caseid, age, iflg_duvar_scrresp2)]
-dat_scr[duvar_scrresp2 == 1 & iflg_duvar_scrresp2 == 1,
-        .(caseid, age, iflg_duvar_scrresp2)]
+dat_scrresp2[, .N, keyby = .(duvar_scrresp2)]
+dat_scrresp2[, .N, keyby = .(duvar_scrresp2, iflg_duvar_scrresp2)]
 
-dat_scr[, .N, keyby = .(caseid, duvar_scrresp2, iflg_duvar_scrresp2)]
-# OK
+dat_scrresp2[is.na(duvar_scrresp2), caseid]
+
+dat_scr[caseid %in% dat_scrresp2[is.na(duvar_scrresp2), caseid],
+        .(caseid, persid, age, dobyy, dobmm)]
 
 
-dat_scr_case <- unique(
-  dat_scr[, .(caseid, duvar_scrresp1, duvar_scrresp2,
-              iflg_duvar_scrresp1, iflg_duvar_scrresp2)]
+# Merge
+dat_scr_case <- merge(
+  x = dat_scrresp1[, .(caseid, duvar_scrresp1, iflg_duvar_scrresp1)],
+  y = dat_scrresp2[, .(caseid, duvar_scrresp2, iflg_duvar_scrresp2)],
+  by = "caseid",
+  all = TRUE
 )
-
 dat_scr_case
 
 dat_scr_case[, .N, keyby = .(duvar_scrresp1)]
@@ -160,5 +184,8 @@ dat_scr_case[, .N, keyby = .(duvar_scrresp1, iflg_duvar_scrresp1)]
 dat_scr_case[, .N, keyby = .(duvar_scrresp2)]
 dat_scr_case[, .N, keyby = .(iflg_duvar_scrresp2)]
 dat_scr_case[, .N, keyby = .(duvar_scrresp2, iflg_duvar_scrresp2)]
+
+dat_scr_case[, .N, keyby = .(iflg_duvar_scrresp1, iflg_duvar_scrresp2)]
+dat_scr_case[is.na(duvar_scrresp2)]
 
 saveRDS(object = dat_scr_case, file = "data/dat_scr_case.rds")
