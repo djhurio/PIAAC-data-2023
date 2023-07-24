@@ -37,7 +37,7 @@ dat_sdif[, .N, keyby = .(trimgrps)]
 # dat_sdif[id_psu == 137 & id_hh == 219]
 
 tab_check_id_111 <- read.xlsx(
-  xlsxFile = "result/checks_19JUL2023_ML.xlsx",
+  xlsxFile = "doc/checks_19JUL2023_ML.xlsx",
   sheet = "SCF_Sampling _ID_PSU,_ID_SSU,_a",
   startRow = 6
 ) |> setDT() |> setnames(tolower)
@@ -67,7 +67,7 @@ tab_test[, .(id_psu, id_ssu, id_hh)] |> anyDuplicated()
 # Country Advice	Every record within a household should have the same value of SORT_HH. Check the returned cases, and determine the correct value of SORT_HH for the household
 
 tab_check_id_112 <- read.xlsx(
-  xlsxFile = "result/checks_19JUL2023_ML.xlsx",
+  xlsxFile = "doc/checks_19JUL2023_ML.xlsx",
   sheet = "SCF_Sampling _ID_PSU,_ID_SS(01)",
   startRow = 6
 ) |> setDT() |> setnames(tolower)
@@ -88,3 +88,11 @@ merge(
   by = c("id_psu", "id_hh"),
   all = T
 )[, .N, keyby = .(N, `count(*)`)]
+
+
+
+# THEOR_HBWT & THEOR_PBWT
+
+dat_sdif[, .(theor_hbwt, theor_pbwt)]
+
+dat_sdif[caseid %in% c("11453963", "12266050"), .(theor_hbwt, theor_pbwt)]
