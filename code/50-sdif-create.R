@@ -90,8 +90,12 @@ dat_sdif[, sum(theor_pbwt, na.rm = T), keyby = .(weightflg)]
 # Save
 setnames(dat_sdif, toupper)
 
-fwrite(x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.csv",  yaml = F)
-fwrite(x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.csvy", yaml = T)
+fwrite(
+  x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.csv", sep = ";",  yaml = F
+)
+fwrite(
+  x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.csvy", sep = ";", yaml = T
+)
 openxlsx::write.xlsx(x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.xlsx",
                      overwrite = T)
 write_sav(data = dat_sdif, path = "result/CY2_Final_SDIF_LVA.sav")
