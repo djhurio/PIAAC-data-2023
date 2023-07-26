@@ -72,26 +72,26 @@ dat_sdif[weightflg == 1, .N, keyby = .(numelg1, numsel1, prob_pers)]
 
 
 # PROB_OVERALL_PERS
+# Do not calculate! Will be calculated by the consorcium.
 # Overall probability of selection of the sampled person
-
-dat_sdif[, prob_overall_pers := round(prob_overall_hh * prob_pers, 12)]
-dat_sdif[weightflg == 1, summary(prob_overall_pers)]
-dat_sdif[weightflg == 1, sum(1 / prob_overall_pers)]
+# dat_sdif[, prob_overall_pers := round(prob_overall_hh * prob_pers, 12)]
+# dat_sdif[weightflg == 1, summary(prob_overall_pers)]
+# dat_sdif[weightflg == 1, sum(1 / prob_overall_pers)]
 
 # THEOR_PBWT
+# Do not calculate! Will be calculated by the consorcium.
 # Theoretical base weight for selected person
 # (inverse overall selection probability of person – no NR adjustments)
-
-dat_sdif[, theor_pbwt := round(1 / prob_overall_pers, 6)]
-dat_sdif[, sum(theor_pbwt, na.rm = T)]
-dat_sdif[, sum(theor_pbwt, na.rm = T), keyby = .(weightflg)]
+# dat_sdif[, theor_pbwt := round(1 / prob_overall_pers, 6)]
+# dat_sdif[, sum(theor_pbwt, na.rm = T)]
+# dat_sdif[, sum(theor_pbwt, na.rm = T), keyby = .(weightflg)]
 
 
 # Save
 setnames(dat_sdif, toupper)
 
 fwrite(
-  x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.csv", sep = ";",  yaml = F
+  x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.csv", sep = ";", yaml = F
 )
 fwrite(
   x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.csvy", sep = ";", yaml = T
