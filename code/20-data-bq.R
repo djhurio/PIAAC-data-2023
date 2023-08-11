@@ -23,6 +23,9 @@ dat_bq[, class(persid)]
 # <02> Sieviete
 dat_bq[, .N, keyby = .(a2_n02)]
 
+# Age
+dat_bq[, .N, keyby = .(a2_d01b)]
+
 # Country of birth
 # A2_Q03a - Vai esat dzimis(-usi) Latvijā?
 # <01> Jā
