@@ -1,0 +1,15 @@
+Since you are using age, gender and country of birth in raking dimensions RAKEDIM1 and RAKEDIM3, it would be good if you can check against the document from ETS to make sure you used the correct BQ and Doorstep Interview variables to derive the RAKEDIM#. In addition, when we review your SDIF we will check RAKEDIM1 against AGE_R and GENDER_R which are derived by IEA during the SDIF processing (AGE_R and GENDER_R are derived using the age/gender from BQ and Doorstep interview, and also CI_AGE/CI_GENDER when BQ/Doorstep interview data are missing).  We will let you know of any discrepancy between RAKEDIM1 and AGE_R/GENDER_R after reviewing your SDIF.
+
+
+BQ:
+
+A2_N02 - dzimums
+A2_Q03a un A2_Q03bLV dzimšanas valsts
+A2_N02LVX - tautība
+
+
+SDIF:
+
+gender	Person gender (BQ or Doorstep Interview)
+calcage	Person age, derived from BQ 
+
