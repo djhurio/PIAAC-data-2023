@@ -13,3 +13,6 @@ SDIF:
 gender	Person gender (BQ or Doorstep Interview)
 calcage	Person age, derived from BQ 
 
+
+
+Thanks for checking with us. Yes, we will use the WEIGHTFLG variable in SDIF to determine which cases will have a final weight. In general cases with DISP_CIBQ = 1, or DISP_CIBQ = 7 and DISP_DS = 1 will be assigned WEIGHTFLG=1, and receive final weight. During the SDIF processing, the consortium will also review responses to key background questions in the Background Questionnaire, including age, gender, highest level of schooling, employment status and country of birth (native/non-native) to verify and update the values of WEIGHTFLG if needed, although the updates normally occur to very few cases based on our experience in PIAAC cycle 1.
