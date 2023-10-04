@@ -206,23 +206,60 @@ dat_sdif[as.logical(WEIGHTFLG) & (GENDER != CI_GENDER), .N]
 dat_sdif[as.logical(WEIGHTFLG) & (CALCAGE != CI_AGE), .N]
 
 dat_RAKEDIM1_update <- openxlsx::read.xlsx(
-  xlsxFile = "feedback/Feedback_on_MS_Final_SDIF_LVA.xlsx",
+  xlsxFile = "feedback/Feedback_on_MS_Final_SDIF_LVA_2023-09-29_v2.xlsx",
   sheet = "RAKEDIM1_update"
 ) |> setDT()
 
+dat_sdif[, .N, keyby = .(GENDER_R, AGE_R)]
+
+dat_sdif[, GENDER_R := ifelse(!is.na(GENDER), GENDER, CI_GENDER)]
+dat_sdif[, AGE_R := ifelse(!is.na(CALCAGE), CALCAGE, CI_AGE)]
+
 tmp <- merge(
-  x = dat_sdif[, .(PERSID, GENDER, CALCAGE, RAKEDIM1)],
-  y = dat_RAKEDIM1_update,
+  x = dat_RAKEDIM1_update,
+  y = dat_sdif[, .(PERSID, WEIGHTFLG,
+                   GENDER, CALCAGE, CI_GENDER, CI_AGE, GENDER_R, AGE_R,
+                   RAKEDIM1)],
+  suffixes = c("_update", "_original"),
   by = "PERSID",
-  all.y = TRUE
+  all.x = TRUE,
+  sort = FALSE
 )
 
 tmp[, .N]
 
-tmp[GENDER == GENDER_R, .N]
-tmp[CALCAGE == AGE_R, .N]
-tmp[GENDER == GENDER_R & CALCAGE == AGE_R, .N]
-tmp[RAKEDIM1.x == RAKEDIM1.y, .N]
+tmp[!is.na(GENDER_original), .(GENDER_original, GENDER_update)]
+tmp[!is.na(GENDER_original), .(GENDER_original, GENDER_update,
+                               CALCAGE_original, CALCAGE_update)]
+tmp[!is.na(GENDER_original), .(CI_GENDER, GENDER_update,
+                               CI_AGE, CALCAGE_update)]
+
+tmp[is.na(GENDER_original),
+    .(WEIGHTFLG, GENDER_original, CI_GENDER, GENDER_update)]
+
+dat_sdif[WEIGHTFLG == 1,
+         .(AGE_R_group = paste(min(AGE_R), max(AGE_R), sep = "-")),
+         keyby = .(RAKEDIM1, GENDER_R)]
+
+tmp[is.na(GENDER_original),
+    .(WEIGHTFLG, GENDER_original, CI_GENDER, CI_AGE)]
+
+# tmp[GENDER == GENDER_R, .N]
+# tmp[CALCAGE == AGE_R, .N]
+# tmp[GENDER == GENDER_R & CALCAGE == AGE_R, .N]
+# tmp[RAKEDIM1.x == RAKEDIM1.y, .N]
+
+tmp <- merge(
+  x = dat_RAKEDIM1_update[original.RAKEDIM1 == "missing"],
+  y = dat_bq[, .(PERSID, A2_Q03a, A2_Q03bLV, A2_N02LVX)],
+  by = "PERSID",
+  all.x = TRUE,
+  sort = FALSE
+)
+
+tmp[, .N]
+
+tmp
 
 rm(tmp)
 
