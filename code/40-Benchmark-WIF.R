@@ -19,13 +19,7 @@ rm(list = ls())
 gc()
 source(".Rprofile")
 
-# Libs
-library(data.table)
-library(openxlsx)
-
-
 # Read file from CSP
-
 fname <- file.path(
   "data/CY2_Prelim_MS_Benchmark_WIF_Codebook_LVA_CSP_2023-06-03.xlsx"
 )
@@ -46,7 +40,6 @@ if (tab_rakedim1[, sum(TOTAL)] != tab_rakedim2[, sum(TOTAL)] |
     tab_rakedim2[, sum(TOTAL)] != tab_rakedim3[, sum(TOTAL)]) stop()
 
 # Excel files
-
 tab_rakedim1_total <- tab_rakedim1[, .(RAKEDIM1, TOTAL)]
 tab_rakedim1_codes <- tab_rakedim1[, .(RAKEDIM1, Gender, Age)]
 

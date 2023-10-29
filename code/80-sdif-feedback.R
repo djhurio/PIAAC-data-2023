@@ -212,9 +212,6 @@ dat_RAKEDIM1_update <- openxlsx::read.xlsx(
 
 dat_sdif[, .N, keyby = .(GENDER_R, AGE_R)]
 
-dat_sdif[, GENDER_R := ifelse(!is.na(GENDER), GENDER, CI_GENDER)]
-dat_sdif[, AGE_R := ifelse(!is.na(CALCAGE), CALCAGE, CI_AGE)]
-
 tmp <- merge(
   x = dat_RAKEDIM1_update,
   y = dat_sdif[, .(PERSID, WEIGHTFLG,

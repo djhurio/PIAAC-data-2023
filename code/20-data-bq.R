@@ -59,7 +59,14 @@ dat_bq[, .N, keyby = .(a2_q03a, a2_q03blv)]
 # <10> Cits
 dat_bq[, .N, keyby = .(a2_n02lvx)]
 
-dat_bq_raking <- dat_bq[, .(persid, a2_n02, a2_q03a, a2_q03blv, a2_n02lvx)]
+dat_bq_raking <- dat_bq[, .(
+  persid,
+  a2_n02, # Sex
+  a2_d01b, # Age
+  a2_q03a, # Vai esat dzimis(-usi) Latvijā?
+  a2_q03blv, # Kurā valstī esat dzimis(-usi)?
+  a2_n02lvx # Kāda ir Jūsu tautība?
+)]
 
 saveRDS(object = dat_bq, file = "data/dat_bq.rds")
 saveRDS(object = dat_bq_raking, file = "data/dat_bq_raking.rds")

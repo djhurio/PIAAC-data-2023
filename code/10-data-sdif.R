@@ -50,7 +50,8 @@ tab_sdif_variables <- read.xlsx(
 
 tab_sdif_variables[, format := as.character(format)]
 
-tab_sdif_variables[, length_tot := sub("\\.[0-9]*$", "", format) |> as.integer()]
+tab_sdif_variables[, length_tot := sub("\\.[0-9]*$", "", format) |>
+                     as.integer()]
 tab_sdif_variables[, length_dec := ifelse(test = grepl("\\.", format),
                                           yes = sub("^[0-9]*\\.", "", format),
                                           no = "0") |> as.integer()]
@@ -354,7 +355,7 @@ dat_sdif_fieldw[, .N, keyby = .(prob_oth)]
 # prob_pers
 # Person probability of selection (within HHs, if applicable) 
 # Required where PERSID is non-missing. If HHs are selected, this is the within HH selection probability for screener countries (NUMSEL#/ NUMELG#).
-dat_sdif_fieldw[, .N, keyby = .(prob_pers)]
+dat_sdif_fieldw[, .N, keyby = .(prob_pers, dw_pers = 1 / prob_pers)]
 
 # strat_pers
 # Explicit strata used for stratifying persons
@@ -1088,9 +1089,23 @@ dat_sdif_fieldw[
   keyby = .(age_r)
 ]
 
+dat_sdif_fieldw[, .N, keyby = .(ci_gender)]
+dat_sdif_fieldw[, .N, keyby = .(v_gender)]
+dat_sdif_fieldw[, .N, keyby = .(gender)]
+dat_sdif_fieldw[, .N, keyby = .(gender_r)]
+
+dat_sdif_fieldw[, .N, keyby = .(scqage)]
+dat_sdif_fieldw[, .N, keyby = .(scqagerange)]
+dat_sdif_fieldw[, .N, keyby = .(ci_age)]
+dat_sdif_fieldw[, .N, keyby = .(v_age)]
+dat_sdif_fieldw[, .N, keyby = .(calcage)]
+dat_sdif_fieldw[, .N, keyby = .(diagerange)]
+dat_sdif_fieldw[, .N, keyby = .(age_r)]
+
 dat_sdif_raking <- dat_sdif_fieldw[
-  as.logical(weightflg),
-  .(caseid, persid, weightflg, gender, calcage)
+  !is.na(persid),
+  .(caseid, persid, strat_psu, id_psu,
+    weightflg, ci_gender, scqage, scqagerange, ci_age)
 ]
 
 saveRDS(object = dat_sdif_fieldw, file = "data/dat_sdif_fieldw.rds")

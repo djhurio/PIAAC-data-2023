@@ -13,6 +13,26 @@ dat_scr <- read.xlsx(
 ) |> setDT() |> setnames(tolower)
 rm(fname)
 
+# BQ load
+dat_bq <- fread("data/BQ/BQ.csv", dec = ",",
+                colClasses = list(numeric = "PERSID")) |> setnames(tolower)
+
+# Raking for age_r
+dat_raking <- readRDS(file = "data/dat_raking_sel.rds")
+dat_raking[, .(persid, age_r)]
+
+# SDIF for strata & PSU
+dat_sdif_sample <- fread(
+  file = "data2-sample/sample_piaac_sdif.csvy",
+  yaml = TRUE
+) |> setnames(tolower)
+
+dat_sdif_sample[, class(caseid)]
+dat_sdif_sample[, caseid := as.numeric(caseid)]
+dat_sdif_sample[, class(caseid)]
+
+dat_sdif_sample[, .(caseid, strat_psu, id_psu)]
+
 # Final disposition code for household for screener
 names(dat_scr)
 grep("disp_scr", names(dat_scr), value = T)
@@ -42,18 +62,105 @@ dat_scr[disp_scr %in% 1:2, .N, keyby = .(hihgeducode)]
 # 980: Nezina
 # 990: Atteicās atbildēt
 dat_scr[, .N, keyby = .(caseid, hihgeducode)]
-dat_scr[hihgeducode %in% 1:3,
-        .(hihgeducode = paste(unique(sort(hihgeducode)), collapse = "-"), .N),
-        keyby = .(caseid)][, .N, keyby = .(hihgeducode)]
+# dat_scr[hihgeducode %in% 1:3,
+#         .(hihgeducode = paste(unique(sort(hihgeducode)), collapse = "-"), .N),
+#         keyby = .(caseid)][, .N, keyby = .(hihgeducode)]
 
 dat_scr[hihgeducode %in% 1:3, persvar1 := as.integer(hihgeducode)]
-dat_scr[, iflg_persvar1 := 0L]
-
+dat_scr[!is.na(persid), iflg_persvar1 := as.integer(is.na(persvar1))]
 dat_scr[, .N, keyby = .(!is.na(persid), persvar1, iflg_persvar1)]
 
+
+# Atlasa
 dat_scr_pers <- dat_scr[!is.na(persid),
-                        .(persid, persvar1, iflg_persvar1)]
-saveRDS(object = dat_scr_pers, file = "data/dat_scr_pers.rds")
+                        .(caseid, persid, persvar1, iflg_persvar1)]
+
+# Pievieno stratu un PSU
+dat_scr_pers <- merge(
+  x = dat_scr_pers,
+  y = dat_sdif_sample[, .(caseid, strat_psu, id_psu)],
+  by = "caseid"
+)
+
+# Pievieno vecumu un atlasa tikai aptaujai atlasītās personas
+dat_scr_pers <- merge(
+  x = dat_scr_pers,
+  y = dat_raking[, .(persid, age_r)],
+  by = "persid"
+)
+dat_scr_pers
+
+# Missing for 5.8% of sampled persons. For some of the missing, can you impute them with the education level from BQ? Then for the remaining missing ones, can you impute them using another approach? Since education is highly related with proficiency levels, it would be beneficial to use the education variable for weighting adjustment.
+
+# Pievieno izglītības līmeni no BQ
+dat_bq[b2_q01lv %in% 0:16, .N, keyby = .(b2_q01lv)]
+
+if (!"b2_q01lv" %in% names(dat_scr_pers)) {
+  dat_scr_pers <- merge(
+    x = dat_scr_pers,
+    y = dat_bq[b2_q01lv %in% 0:16, .(persid, b2_q01lv)],
+    by = "persid",
+    all.x = TRUE,
+    sort = FALSE
+  )
+}
+
+dat_scr_pers[, .N, keyby = .(persvar1, iflg_persvar1, b2_q01lv)]
+dat_scr_pers[!is.na(b2_q01lv), table(b2_q01lv, persvar1)]
+
+# Impute from BQ
+# 1: 0-3
+# 2: 4-9
+# 3: 10-16
+dat_scr_pers[b2_q01lv %in% 0:3,   b2_q01lv_grp := 1L]
+dat_scr_pers[b2_q01lv %in% 4:9,   b2_q01lv_grp := 2L]
+dat_scr_pers[b2_q01lv %in% 10:16, b2_q01lv_grp := 3L]
+dat_scr_pers[is.na(persvar1), persvar1 := b2_q01lv_grp]
+dat_scr_pers[, .N, keyby = .(iflg_persvar1, persvar1)]
+dat_scr_pers[, b2_q01lv_grp := NULL]
+
+dat_scr_pers[, .N, keyby = .(iflg_persvar1)][, P := prop.table(N)][]
+dat_scr_pers[, .N, keyby = .(is.na(persvar1))][, P := prop.table(N)][]
+
+dat_scr_pers[!is.na(persvar1), table(age_r, persvar1)]
+
+dat_scr_pers[, .N, keyby = .(strat_psu, id_psu)]
+
+# dat_scr_pers1 <- VIM::hotdeck(
+#   data = dat_scr_pers,
+#   variable = "persvar1",
+#   ord_var = "age_r",
+#   domain_var = "strat_psu"
+# )
+# 
+# dat_scr_pers2 <- VIM::hotdeck(
+#   data = dat_scr_pers,
+#   variable = "persvar1",
+#   ord_var = "age_r",
+#   domain_var = "strat_psu"
+# )
+# 
+# all.equal(dat_scr_pers1, dat_scr_pers2)
+
+set.seed(174835)
+dat_scr_pers <- VIM::hotdeck(
+  data = dat_scr_pers,
+  variable = "persvar1",
+  ord_var = "age_r",
+  domain_var = "strat_psu"
+)
+
+ggplot(data = dat_scr_pers, mapping = aes(x = age_r, fill = factor(persvar1))) +
+  geom_bar() +
+  facet_grid(rows = vars(persvar1_imp), scales = "free_y") +
+  theme_bw()
+
+dat_scr_pers[, .N, keyby = .(persvar1)]
+dat_scr_pers[, .N, keyby = .(iflg_persvar1)][, P := prop.table(N)][]
+dat_scr_pers[, .N, keyby = .(iflg_persvar1, persvar1)]
+
+saveRDS(object = dat_scr_pers[, .(persid, persvar1, iflg_persvar1)],
+        file = "data/dat_scr_pers.rds")
 
 
 
