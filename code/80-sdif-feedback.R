@@ -291,3 +291,10 @@ rm(tmp)
 # 8 cases have IFLG_RAKEDIM3=1, although W1 form table 8.4 mentioned 9 were imputed.
 
 dat_sdif[, .N, keyby = .(IFLG_RAKEDIM3)]
+
+
+# 13611880019
+dat_sdif[PERSID == "13611880019", .(PROB_PERS, PROB_OVERALL_PERS)]
+dat_sdif[PERSID == "13611880019", .SD, .SDcols = patterns("^PERSVAR")]
+dat_sdif[PERSID == "13611880019", .SD, .SDcols = patterns("^DUVAR")]
+dat_sdif[PERSID == "13611880019", .SD, .SDcols = patterns("^IFLG")]
