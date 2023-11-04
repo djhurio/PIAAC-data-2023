@@ -3,7 +3,6 @@
 # Reset
 rm(list = ls())
 gc()
-source(".Rprofile")
 
 # SDIF
 dat_sdif_fieldw <- readRDS(file = "data/dat_sdif_fieldw.rds")
@@ -93,6 +92,9 @@ fwrite(
 fwrite(
   x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.csvy", sep = ";", yaml = T
 )
-openxlsx::write.xlsx(x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.xlsx",
-                     overwrite = T)
-write_sav(data = dat_sdif, path = "result/CY2_Final_SDIF_LVA.sav")
+write.xlsx(
+  x = dat_sdif, file = "result/CY2_Final_SDIF_LVA.xlsx", overwrite = T
+)
+write_sav(
+  data = dat_sdif, path = "result/CY2_Final_SDIF_LVA.sav"
+)

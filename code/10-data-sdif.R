@@ -3,28 +3,32 @@
 # Reset
 rm(list = ls())
 gc()
-source(".Rprofile")
+source("code/05-functions.R")
 
 # SDIF
 # dat_sdif_csv <- fread("data/SDIF/SDIF.csv")
 # dat_sdif_sav <- read_spss("data/SDIF/SDIF.sav")
 
-# CSV
+# Current
 dat_sdif_fieldw <- fread(
-  file = "data/SDIF_3NOV2023_LVA/SDIF_3NOV2023_LVA.csv", dec = ","
+  file = "data/SDIF/SDIF_3NOV2023_LVA.csv", dec = ","
 ) |> setnames(tolower)
 
+# Previous
 dat_sdif_previo <- fread(
-  file = "data/SDIF_15JUL2023/SDIF_15JUL2023.csv", dec = ","
+  file = "data/SDIF/SDIF_15JUL2023.csv", dec = ","
 ) |> setnames(tolower)
+
+# Compare
+# all.equal(dat_sdif_fieldw, dat_sdif_previo)
 
 tmp <- map2(.x = dat_sdif_fieldw, .y = dat_sdif_previo, .f = all.equal)
 tmp[map_lgl(tmp, is.logical)] |> unlist() |> all()
-cat(names(tmp[!map_lgl(tmp, is.logical)]), sep = "\n")
+# cat(names(tmp[!map_lgl(tmp, is.logical)]), sep = "\n")
 
 tmp <- merge(
-  x = dat_sdif_fieldw[, .(caseid, persid, ci_age, ci_gender, age_r, gender_r)],
-  y = dat_sdif_fieldw[, .(caseid, persid, ci_age, ci_gender, age_r, gender_r)],
+  x = dat_sdif_fieldw[, .(caseid, persid, ci_age, ci_gender)],
+  y = dat_sdif_fieldw[, .(caseid, persid, ci_age, ci_gender)],
   by = c("caseid", "persid")
 )
 

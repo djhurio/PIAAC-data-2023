@@ -3,15 +3,41 @@
 # Reset
 rm(list = ls())
 gc()
-source(".Rprofile")
 
 # BQ
-# dat_bq_csv <- fread("data/BQ/BQ.csv")
-# dat_bq_sav <- read_spss("data/BQ/BQ.sav")
 
-# CSV
-dat_bq <- fread(file = "data/BQ_18JUl2023/BQ_18JUL2023.csv", dec = ",") |>
+# Current
+dat_bq <- fread(file = "data/BQ/BQ_3NOV2023.csv", dec = ",") |>
   setnames(tolower)
+
+# Previous
+dat_bq_prev <- fread(file = "data/BQ/BQ_18JUL2023.csv", dec = ",") |>
+  setnames(tolower)
+
+# Compare
+all.equal(dat_bq, dat_bq_prev)
+
+tmp <- map2(.x = dat_bq, .y = dat_bq_prev, .f = all.equal)
+tmp[map_lgl(tmp, is.logical)] |> unlist() |> all()
+# cat(names(tmp[!map_lgl(tmp, is.logical)]), sep = "\n")
+
+tmp <- merge(
+  x = dat_bq[,      .(persid, a2_n02, a2_d01b)],
+  y = dat_bq_prev[, .(persid, a2_n02, a2_d01b)],
+  by = "persid",
+  suffixes = c(".curr", ".prev")
+)
+
+tmp[, all.equal(a2_n02.curr, a2_n02.prev)]
+tmp[, all.equal(a2_d01b.curr, a2_d01b.prev)]
+
+tmp[, .N, keyby = .(a2_n02.curr, a2_n02.prev)]
+tmp[, .N, keyby = .(a2_d01b.curr, a2_d01b.prev)]
+
+rm(dat_bq_prev)
+rm(tmp)
+
+
 
 dat_bq[, class(persid)]
 dat_bq[, persid := as.numeric(persid)]

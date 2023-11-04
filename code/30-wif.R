@@ -3,7 +3,6 @@
 # Reset
 rm(list = ls())
 gc()
-source(".Rprofile")
 
 dat_sdif_fieldw <- readRDS(file = "data/dat_sdif_fieldw.rds")
 dat_sdif_raking <- readRDS(file = "data/dat_sdif_raking.rds")

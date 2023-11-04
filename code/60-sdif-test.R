@@ -3,7 +3,6 @@
 # Reset
 rm(list = ls())
 gc()
-source(".Rprofile")
 
 # SDIF load
 

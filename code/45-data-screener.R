@@ -3,7 +3,6 @@
 # Reset
 rm(list = ls())
 gc()
-source(".Rprofile")
 
 # Load data
 fname <- "data/Screener/Cases_Export_20JUL2023.xlsx"

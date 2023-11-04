@@ -17,7 +17,6 @@
 # Reset
 rm(list = ls())
 gc()
-source(".Rprofile")
 
 # Read file from CSP
 fname <- file.path(
