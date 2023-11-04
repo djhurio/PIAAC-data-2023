@@ -157,9 +157,6 @@ dat_scr_pers[, .N, keyby = .(persvar1)]
 dat_scr_pers[, .N, keyby = .(iflg_persvar1)][, P := prop.table(N)][]
 dat_scr_pers[, .N, keyby = .(iflg_persvar1, persvar1)]
 
-saveRDS(object = dat_scr_pers[, .(persid, persvar1, iflg_persvar1)],
-        file = "data/dat_scr_pers.rds")
-
 
 
 # DUVAR_SCRRESP1: Household size
@@ -293,4 +290,8 @@ dat_scr_case[, .N, keyby = .(duvar_scrresp2, iflg_duvar_scrresp2)]
 dat_scr_case[, .N, keyby = .(iflg_duvar_scrresp1, iflg_duvar_scrresp2)]
 dat_scr_case[is.na(duvar_scrresp2)]
 
+
+# Save
+saveRDS(object = dat_scr_pers[, .(persid, persvar1, iflg_persvar1)],
+        file = "data/dat_scr_pers.rds")
 saveRDS(object = dat_scr_case, file = "data/dat_scr_case.rds")
