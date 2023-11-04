@@ -10,8 +10,30 @@ source(".Rprofile")
 # dat_sdif_sav <- read_spss("data/SDIF/SDIF.sav")
 
 # CSV
-dat_sdif_fieldw <- fread("data/SDIF/SDIF.csv", dec = ",") |>
-  setnames(tolower)
+dat_sdif_fieldw <- fread(
+  file = "data/SDIF_3NOV2023_LVA/SDIF_3NOV2023_LVA.csv", dec = ","
+) |> setnames(tolower)
+
+dat_sdif_previo <- fread(
+  file = "data/SDIF_15JUL2023/SDIF_15JUL2023.csv", dec = ","
+) |> setnames(tolower)
+
+tmp <- map2(.x = dat_sdif_fieldw, .y = dat_sdif_previo, .f = all.equal)
+tmp[map_lgl(tmp, is.logical)] |> unlist() |> all()
+cat(names(tmp[!map_lgl(tmp, is.logical)]), sep = "\n")
+
+tmp <- merge(
+  x = dat_sdif_fieldw[, .(caseid, persid, ci_age, ci_gender, age_r, gender_r)],
+  y = dat_sdif_fieldw[, .(caseid, persid, ci_age, ci_gender, age_r, gender_r)],
+  by = c("caseid", "persid")
+)
+
+tmp[, all.equal(ci_age.x, ci_age.y)]
+tmp[, all.equal(ci_gender.x, ci_gender.y)]
+
+rm(dat_sdif_previo)
+rm(tmp)
+
 
 dat_sdif_fieldw[, class(caseid)]
 dat_sdif_fieldw[, class(persid)]

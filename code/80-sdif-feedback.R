@@ -12,8 +12,7 @@ dat_sdif <- fread("result/CY2_Final_SDIF_LVA.csvy", yaml = TRUE)
 dat_scf <- fread("../PIAAC-sample-2022/data/sample_piaac_scf.csv")
 
 # BQ load
-dat_bq <- fread("data/BQ/BQ.csv", dec = ",",
-                colClasses = list(numeric = "PERSID"))
+dat_bq <- readRDS(file = "data/dat_bq.rds") |> setnames(toupper)
 
 
 # CASEID
@@ -225,6 +224,8 @@ tmp <- merge(
 
 tmp[, .N]
 
+tmp[, all.equal(updated.RAKEDIM1, RAKEDIM1)]
+
 tmp[!is.na(GENDER_original), .(GENDER_original, GENDER_update)]
 tmp[!is.na(GENDER_original), .(GENDER_original, GENDER_update,
                                CALCAGE_original, CALCAGE_update)]
@@ -248,7 +249,7 @@ tmp[is.na(GENDER_original),
 
 tmp <- merge(
   x = dat_RAKEDIM1_update[original.RAKEDIM1 == "missing"],
-  y = dat_bq[, .(PERSID, A2_Q03a, A2_Q03bLV, A2_N02LVX)],
+  y = dat_bq[, .(PERSID, A2_Q03A, A2_Q03BLV, A2_N02LVX)],
   by = "PERSID",
   all.x = TRUE,
   sort = FALSE
@@ -298,3 +299,4 @@ dat_sdif[PERSID == "13611880019", .(PROB_PERS, PROB_OVERALL_PERS)]
 dat_sdif[PERSID == "13611880019", .SD, .SDcols = patterns("^PERSVAR")]
 dat_sdif[PERSID == "13611880019", .SD, .SDcols = patterns("^DUVAR")]
 dat_sdif[PERSID == "13611880019", .SD, .SDcols = patterns("^IFLG")]
+

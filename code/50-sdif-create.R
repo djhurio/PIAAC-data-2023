@@ -6,10 +6,7 @@ gc()
 source(".Rprofile")
 
 # SDIF
-dat_sdif_fieldw <- fread(
-  "data/SDIF/SDIF.csv", dec = ",",
-  colClasses = list("numeric" = c("CASEID", "PERSID"))
-) |> setnames(tolower)
+dat_sdif_fieldw <- readRDS(file = "data/dat_sdif_fieldw.rds")
 
 dat_sdif_fieldw[, class(caseid)]
 dat_sdif_fieldw[, class(persid)]

@@ -14,8 +14,7 @@ dat_scr <- read.xlsx(
 rm(fname)
 
 # BQ load
-dat_bq <- fread("data/BQ/BQ.csv", dec = ",",
-                colClasses = list(numeric = "PERSID")) |> setnames(tolower)
+dat_bq <- readRDS(file = "data/dat_bq.rds")
 
 # Raking for age_r
 dat_raking <- readRDS(file = "data/dat_raking_sel.rds")

@@ -5,11 +5,10 @@ rm(list = ls())
 gc()
 source(".Rprofile")
 
-# dat_sdif_fieldw <- readRDS(file = "data/dat_sdif_fieldw.rds")
-dat_bq <- readRDS(file = "data/dat_bq.rds")
-
 dat_sdif_fieldw <- readRDS(file = "data/dat_sdif_fieldw.rds")
 dat_sdif_raking <- readRDS(file = "data/dat_sdif_raking.rds")
+
+dat_bq <- readRDS(file = "data/dat_bq.rds")
 dat_bq_raking <- readRDS(file = "data/dat_bq_raking.rds")
 
 dat_sdif_fieldw[, class(caseid)]
@@ -186,8 +185,8 @@ dat_raking[, .N, keyby = .(ci_gender, a2_n02)]
 dat_raking[, .N, keyby = .(ci_age, a2_d01b)]
 
 # The final RAKEDIM1 should be based on AGE_R and GENDER_R which were derived by IEA using BQ/Doorstep interview age/ gender, and CI_AGE/CI_GENDER if missing BQ/DS age/gender.
-dat_raking[, age_r := ifelse(a2_d01b %in% 16:65, a2_d01b, ci_age)]
-dat_raking[, gender_r := ifelse(a2_n02 %in% 1:2, a2_n02, ci_gender)]
+dat_raking[, age_r    := ifelse(a2_d01b %in% 16:65, a2_d01b, ci_age)]
+dat_raking[, gender_r := ifelse(a2_n02  %in%   1:2, a2_n02,  ci_gender)]
 
 dat_raking[, age_group := trunc((age_r - 11) / 5)]
 dat_raking[, .(.N, min(age_r), max(age_r)), keyby = .(age_group)]
@@ -201,6 +200,7 @@ dat_raking[, iflg_rakedim1 := as.integer(
   (impflgag & !a2_d01b %in% 16:65) | (impflgge & !a2_n02 %in% 1:2)
 )]
 dat_raking[, .N, keyby = .(iflg_rakedim1)]
+dat_raking[, .N, keyby = .(impflgag, impflgge, iflg_rakedim1)]
 
 dat_raking[, .N, keyby = .(rakedim1, gender_r, age_group)]
 

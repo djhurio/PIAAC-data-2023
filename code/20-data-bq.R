@@ -10,7 +10,8 @@ source(".Rprofile")
 # dat_bq_sav <- read_spss("data/BQ/BQ.sav")
 
 # CSV
-dat_bq <- fread("data/BQ/BQ.csv", dec = ",") |> setnames(tolower)
+dat_bq <- fread(file = "data/BQ_18JUl2023/BQ_18JUL2023.csv", dec = ",") |>
+  setnames(tolower)
 
 dat_bq[, class(persid)]
 dat_bq[, persid := as.numeric(persid)]
