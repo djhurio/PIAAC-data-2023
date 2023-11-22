@@ -96,16 +96,26 @@ dat_sdif[, c(imp_var_names) := map(.SD, as.integer), .SDcols = imp_var_names]
 dat_sdif[, map(.SD, sum, na.rm = TRUE), .SDcols = imp_var_names]
 
 tab_imp <- melt.data.table(
-  data = dat_sdif, id.vars = c("CASEID", "PERSID", "DISP_CIBQ", "WEIGHTFLG"),
+  data = dat_sdif,
+  id.vars = c("CASEID", "PERSID", "DISP_CIBQ", "DISP_DS", "WEIGHTFLG"),
   measure.vars = imp_var_names,
   variable.factor = FALSE,
   na.rm = TRUE
 )
 
-tab_imp[!grepl("RAKEDIM", variable),
-        .(n_imp = sum(value), n_tot = .N),
-        by = .(variable = sub("IFLG_", "", variable))][n_imp > 0]
+tab_imp[
+  !grepl("RAKEDIM", variable),
+  .(n_imp = sum(value), n_tot = .N, rate_imp = round(100 * sum(value) / .N, 1)),
+  by = .(variable = sub("IFLG_", "", variable))
+][n_imp > 0]
 
-tab_imp[grepl("RAKEDIM", variable),
+
+# BQ Literacy Related Nonrespondents
+tab_imp[grepl("RAKEDIM", variable) & DISP_CIBQ == 7 & DISP_DS == 1,
         .(n_imp = sum(value), n_tot = .N),
-        keyby = .(DISP_CIBQ, WEIGHTFLG, variable)][n_imp > 0]
+        keyby = .(variable)][n_imp > 0]
+
+# BQ respondents
+tab_imp[grepl("RAKEDIM", variable) & DISP_CIBQ == 1,
+        .(n_imp = sum(value), n_tot = .N),
+        keyby = .(variable)][n_imp > 0]
