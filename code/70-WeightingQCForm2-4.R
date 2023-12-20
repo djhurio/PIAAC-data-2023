@@ -5,15 +5,14 @@ rm(list = ls())
 gc()
 
 # SDIF
-# dat_sdif <- fread("result/CY2_Final_SDIF_LVA.csvy", yaml = TRUE)
-dat_sdif <- fread(
+dat_sdif_du <- fread(
   file = "../PIAAC-sample-2022/data2/sample_piaac_sdif.csvy",
   yaml = TRUE
 )
 
 
 # WeightingQCForm-2_BaseWeights_Replicates_LVA.xlsx
-grep("^VAR", names(dat_sdif))
+grep("^VAR", names(dat_sdif_du))
 
 dat_check1_1 <- openxlsx2::read_xlsx(
   file = "WeightingQCForms/WeightingQCForm-2_BaseWeights_Replicates_LVA.xlsx",
@@ -25,10 +24,10 @@ dat_check1_1 <- openxlsx2::read_xlsx(
 dat_check1_1
 
 dat_check1_1[, .(count = .N, sum = sum(FREQUENCY))]
-dat_sdif[, .N]
+dat_sdif_du[, .N]
 
 dat_check1_1[, .(count = .N, sum = sum(FREQUENCY)), keyby = .(VARSTRAT)]
-dat_sdif[, .N, keyby = .(STRAT_PSU)]
+dat_sdif_du[, .N, keyby = .(STRAT_PSU)]
 
 
 
@@ -55,27 +54,27 @@ dat_check1_2[, .N]
 dat_check1_2[, .N, keyby = .(CERTFLAG, FREQUENCY)]
 
 
-dat_sdif[, summary(PROB_PSU)]
+dat_sdif_du[, summary(PROB_PSU)]
 
-dat_sdif[, CERTFLAG := as.integer(abs(PROB_PSU - 1) < .Machine$double.eps)]
-dat_sdif[, .N, keyby = .(STRAT_PSU, CERTFLAG)]
-dat_sdif[CERTFLAG == 1, .N, keyby = .(STRAT_PSU, ID_PSU)]
+dat_sdif_du[, CERTFLAG := as.integer(abs(PROB_PSU - 1) < .Machine$double.eps)]
+dat_sdif_du[, .N, keyby = .(STRAT_PSU, CERTFLAG)]
+dat_sdif_du[CERTFLAG == 1, .N, keyby = .(STRAT_PSU, ID_PSU)]
 
 
 names(dat_check1_2a)
 names(dat_check1_2b)
 
-dat_sdif[, .(CERTFLAG, STRAT_PSU, ID_PSU, SORT_PSU, ID_HH, SORT_HH)]
+dat_sdif_du[, .(CERTFLAG, STRAT_PSU, ID_PSU, SORT_PSU, ID_HH, SORT_HH)]
 
-dat_sdif[CERTFLAG == 0L, psu_str := STRAT_PSU]
-dat_sdif[CERTFLAG == 0L, psu_id  := ID_PSU]
-dat_sdif[CERTFLAG == 0L, psu_ord := SORT_PSU]
+dat_sdif_du[CERTFLAG == 0L, psu_str := STRAT_PSU]
+dat_sdif_du[CERTFLAG == 0L, psu_id  := ID_PSU]
+dat_sdif_du[CERTFLAG == 0L, psu_ord := SORT_PSU]
 
-dat_sdif[CERTFLAG == 1L, psu_str := ID_PSU]
-dat_sdif[CERTFLAG == 1L, psu_id  := ID_HH]
-dat_sdif[CERTFLAG == 1L, psu_ord := SORT_HH]
+dat_sdif_du[CERTFLAG == 1L, psu_str := ID_PSU]
+dat_sdif_du[CERTFLAG == 1L, psu_id  := ID_HH]
+dat_sdif_du[CERTFLAG == 1L, psu_ord := SORT_HH]
 
-tab_check1_2 <- dat_sdif[
+tab_check1_2 <- dat_sdif_du[
   ,
   .(FREQUENCY = .N),
   keyby = .(CERTFLAG, STRAT_PSU, psu_str, psu_id, psu_ord)
@@ -169,7 +168,7 @@ dat_check4[, .N, keyby = .(variable)]
 
 dat_check4[, sum(value), keyby = .(REPLICATES)]
 
-dat_sdif[, sum(1 / (PROB_PSU * PROB_HH))]
+dat_sdif_du[, sum(1 / (PROB_PSU * PROB_HH))]
 
 
 dat_check4[, .(variable)] |> unique()
@@ -180,18 +179,18 @@ all(dat_check1_1[, paste0(
 
 
 
-dat_sdif[, .(psu_str, psu_id)]
+dat_sdif_du[, .(psu_str, psu_id)]
 tab_check1_2[, .(psu_str, psu_id, VARSTRAT, VARUNIT)]
 
-dat_sdif <- merge(
-  x = dat_sdif,
+dat_sdif_du <- merge(
+  x = dat_sdif_du,
   y = tab_check1_2[, .(psu_str, psu_id, VARSTRAT, VARUNIT)],
   by = c("psu_str", "psu_id")
 )
 
-dat_sdif[, sum(1 / PROB_PSU / PROB_HH)]
+dat_sdif_du[, sum(1 / PROB_PSU / PROB_HH)]
 
-tab_weights <- dat_sdif[
+tab_weights <- dat_sdif_du[
   ,
   sum(1 / PROB_PSU / PROB_HH),
   keyby = .(VARSTRAT, VARUNIT)
@@ -214,3 +213,10 @@ g <- 80L
 k <- 0.3
 1 / (g * (1 - k) ^ 2)
 1 / g
+
+
+# WeightingQCForm-3_BasicNRBA_Screener_LVA
+
+# SDIF
+dat_sdif <- fread("result/CY2_Final_SDIF_LVA.csvy", yaml = TRUE)
+dat_sdif[, .N]
