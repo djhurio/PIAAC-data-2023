@@ -765,3 +765,131 @@ tab_w4_5_5_tmp[, all.equal(value.x, value.y)]
 tab_w4_5_5_tmp[is.na(value.x)]
 tab_w4_5_5_tmp[is.na(value.y)]
 
+
+
+# Weighting QC Form W-5 (Screener) LVA
+# https://piaac.ets.org/portal/weighting-qc-form-w-5-screener-lva/
+# WeightingQCForm-5_Person (Screener)_LVA.xlsx
+
+dat_sdif
+dat_wif
+
+names(dat_sdif)
+names(dat_wif)
+
+intersect(names(dat_sdif), names(dat_wif))
+
+setkeyv(dat_sdif, intersect(names(dat_sdif), names(dat_wif)))
+setkeyv(dat_wif, intersect(names(dat_sdif), names(dat_wif)))
+
+dat_sdif[, .N] == dat_wif[, .N]
+
+dat_pers <- merge(
+  x = dat_sdif,
+  y = dat_wif,
+  all = T
+)
+
+dat_pers
+
+grep("^SP", names(dat_pers), value = T)
+
+dat_pers[, .(SPBWT0, SPNRWT0, SPLNRWT0, SPTWT0, SPFWT0)]
+
+dat_pers[, .(DISP_CIBQ, DISP_MAIN, DISP_DS)]
+
+dat_pers[, .N, keyby = .(DISP_CIBQ)]
+dat_pers[, .N, keyby = .(DISP_MAIN)]
+dat_pers[, .N, keyby = .(DISP_DS)]
+
+dat_pers[DISP_CIBQ == 1, .N, keyby = .(DISP_MAIN)]
+
+# NOTE: The factors and weights shown here are for a household k or person l.
+# The households and persons can be classified as
+# R: respondent,
+# L: literacy-related nonrespondent for the screener,
+# L1: BQ literacy-related nonrespondent that
+# completed the Doorstep Interview or assessment literacy-related nonrespondent,
+# L2: BQ literacy-related nonrespondent that
+# did not complete the Doorstep Interview,
+# NR: nonliteracy-related nonrespondent,
+# I: ineligible,
+# D: sampled person with a disability, or
+# U: unknown eligibility.
+# S represents the sum of the prior-stage weights over records
+# in the same adjustment cell as household k or person l,
+# S’ is the sum of screener base weights, and
+# S* is the control total for the cell.
+# P represents the selection probability.
+
+# Duplicate person records (DISP_CIBQ=27) should be deleted and probabilities
+# of selection adjusted for associated records.
+# Otherwise, they can be treated as ineligibles
+# if the total count of duplicates is less than one per cent.
+
+dat_pers[!is.na(DISP_CIBQ), .N, keyby = .(DISP_CIBQ)][
+  , P := prop.table(N) * 100
+][]
+
+if ("pers_cat" %in% names(dat_pers)) dat_pers[, pers_cat := NA]
+dat_pers[DISP_CIBQ  %in% 1L & !DISP_MAIN %in% 7:9, pers_cat := "R"]
+dat_pers[(DISP_CIBQ %in% 7L &  DISP_DS %in% 1L) |
+         (DISP_CIBQ %in% 1L &  DISP_MAIN %in% 7:9), pers_cat := "L1"]
+dat_pers[DISP_CIBQ %in% 7:9 & !DISP_DS %in% 1L, pers_cat := "L2"]
+dat_pers[DISP_CIBQ %in% c(3:5, 14L, 17L, 21L, 23:24, 90L), pers_cat := "NR"]
+dat_pers[DISP_CIBQ %in% c(12:13, 15:16), pers_cat := "D"]
+dat_pers[DISP_CIBQ %in% c(18L, 25L, 27L), pers_cat := "I"]
+
+# Cases with falsified data (QCFLAG=2) should be treated as nonrespondents.
+dat_pers[!is.na(DISP_CIBQ) & QCFLAG == 2L, .N]
+dat_pers[!is.na(DISP_CIBQ) & QCFLAG == 2L, pers_cat := "NR"]
+
+dat_pers[, pers_cat := factor(
+  x = as.character(pers_cat),
+  levels = c("R", "L1", "L2", "NR", "D", "I")
+)]
+
+dat_pers[!is.na(DISP_CIBQ), .N, keyby = .(QCFLAG)]
+dat_pers[!is.na(DISP_CIBQ) & QCFLAG == 2L, .N, keyby = .(pers_cat)]
+
+dat_pers[!is.na(pers_cat), .N]
+dat_pers[!is.na(pers_cat), .N, keyby = .(pers_cat)]
+dat_pers[!is.na(pers_cat), .N, keyby = .(pers_cat, DISP_CIBQ)]
+
+
+# Base weight
+dat_pers[, all.equal(SPBWT0, round(HHNRWT0 / PROB_PERS, 6),
+                     check.attributes = FALSE)]
+# TRUE
+
+dat_pers[, sum(SPBWT0, na.rm = TRUE)]
+dat_pers[, sum(SPBWT0, na.rm = TRUE), keyby = .(pers_cat)]
+# dat_pers[is.na(pers_cat) & !is.na(SPBWT0), .N]
+# dat_pers[is.na(pers_cat) & !is.na(SPBWT0),
+#          .(CASEID, PERSID, DISP_CIBQ, DISP_MAIN, DISP_DS, QCFLAG)]
+
+# Nonliteracy-related Nonresponse adjustment
+names(dat_wif)
+dat_pers[, .N, keyby = .(SPNRCELL)]
+
+dat_pers[, .N, keyby = .(pers_cat = !is.na(pers_cat),
+                         SPNRCELL = !is.na(SPNRCELL),
+                         SPBWT0   = !is.na(SPBWT0))]
+
+dat_pers[!is.na(pers_cat) & is.na(SPNRCELL), .N]
+dat_pers[!is.na(pers_cat) & is.na(SPNRCELL),
+         .(CASEID, PERSID, DISP_SCR, DISP_CIBQ, DISP_MAIN, DISP_DS, QCFLAG)]
+
+# dat_pers[, c("S_R", "S_NR", "S_D") := NULL]
+dat_pers[, S_R  := sum(SPBWT0 * (pers_cat == "R")),  by = .(SPNRCELL)]
+dat_pers[, S_NR := sum(SPBWT0 * (pers_cat == "NR")), by = .(SPNRCELL)]
+dat_pers[, S_D  := sum(SPBWT0 * (pers_cat == "D")),  by = .(SPNRCELL)]
+# dat_pers[, class(S_R)]
+
+dat_pers[pers_cat %in% c("L1", "L2", "I"), F_3 := 1]
+dat_pers[pers_cat %in% "R", F_3 := (S_R + S_NR + S_D) / S_R]
+dat_pers[pers_cat %in% c("NR", "D"), F_3 := 0]
+
+dat_pers[!is.na(pers_cat), as.list(summary(F_3)), keyby = .(pers_cat)]
+
+dat_pers[, all.equal(SPNRWT0, round(SPBWT0 * F_3, 6), check.attributes = FALSE)]
