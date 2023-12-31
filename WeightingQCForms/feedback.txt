@@ -1,0 +1,13 @@
+WeightingQCForm-5_Person (Screener)_LVA.xlsx
+
+Table 2-5. Classification of Sampled Persons (for Screener Countries)
+
+- Denote BQ literacy-related nonrespondent with Doorstep Interview completed or assessment literacy-related NR as L1 not L
+- Denote BQ literacy-related nonrespondent with Doorstep interview not completed as L2
+
+Adjustment for Screener and BQ Literacy-Related Nonresponse
+
+- SPLNRCELL is not defined for L in data
+- F_4 is not defined for NR and D
+- HHBWT0 should be devided by number of sampled persons for L1 and L2
+
