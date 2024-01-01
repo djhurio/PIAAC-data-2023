@@ -11,3 +11,10 @@ Adjustment for Screener and BQ Literacy-Related Nonresponse
 - F_4 is not defined for NR and D
 - HHBWT0 should be devided by number of sampled persons for L1 and L2
 
+
+
+
+Weighting International File (WIF) for QC LVA
+
+- Rename VEMETHODN as VEMETHOD.
+- It would be useful to have SPRWT0 in the WIF_QCChecks data file.
