@@ -1,15 +1,40 @@
 WeightingQCForm-5_Person (Screener)_LVA.xlsx
 
+Table 2-3. Screener and BQ Adjustment Factors and Weights for Countries with Screeners
+
+- SPLNRCELL is not defined for L in data
+- F_4 is not defined for NR and D
+- HHBWT0 should be devided by number of sampled persons for L1 and L2
+
 Table 2-5. Classification of Sampled Persons (for Screener Countries)
 
 - Denote BQ literacy-related nonrespondent with Doorstep Interview completed or assessment literacy-related NR as L1 not L
 - Denote BQ literacy-related nonrespondent with Doorstep interview not completed as L2
 
-Adjustment for Screener and BQ Literacy-Related Nonresponse
+Raking calibration is used
 
-- SPLNRCELL is not defined for L in data
-- F_4 is not defined for NR and D
-- HHBWT0 should be devided by number of sampled persons for L1 and L2
+I am getting slightly different values for SPRWT0/SPTWT0. For example where SPRWT0 is my calculation, but SPTWT0 is taken from the WIF file.
+
+      CASEID      PERSID   SPRWT0   SPTWT0 SPTWT0_abs_diff
+ 1: 13130008 13130008037 837.2850 837.3089      0.02382406
+ 2: 10801000 10801000028 813.6386 813.6613      0.02270796
+ 3: 10674338 10674338028 752.2962 752.3146      0.01844659
+ 4: 13158101 13158101019 550.6436 550.6599      0.01631957
+ 5: 11237457 11237457019 534.8461 534.8614      0.01529511
+ 6: 11683315 11683315019 686.5329 686.5181      0.01488307
+ 7: 15243706 15243706028 509.6981 509.7130      0.01484163
+ 8: 11476733 11476733019 470.2421 470.2557      0.01359755
+ 9: 14931789 14931789028 465.6061 465.6194      0.01330476
+10: 15159083 15159083028 675.8882 675.8762      0.01192627
+11: 10707265 10707265019 535.7687 535.7571      0.01161471
+12: 11667476 11667476028 367.4705 367.4815      0.01093137
+13: 14776458 14776458019 471.7445 471.7339      0.01061902
+14: 13625757 13625757028 343.4064 343.4165      0.01004722
+
+1+(CV(weight))^2 = 2.02 for SPRWT0 (not 1.00)
+
+How did you get the cutoff value 867.936? Median raked weight is 125.0868 (the same value as for you). The value of SQRT(1+CV^2) is 1.421628. So 3.5 * 1.421628 * 125.0868 = 622.3945. How did you get the value 6.94 in calculation of the cutoff value?
+
 
 
 

@@ -721,6 +721,13 @@
       ],
       "Hash": "c6fafa6cccb1e1dfe7f7d122efd6e6a7"
     },
+    "lpSolve": {
+      "Package": "lpSolve",
+      "Version": "5.6.20",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "2801c8082e89ed84cc0dbe43de850d31"
+    },
     "magrittr": {
       "Package": "magrittr",
       "Version": "2.0.3",
@@ -771,9 +778,9 @@
     },
     "nlme": {
       "Package": "nlme",
-      "Version": "3.1-163",
+      "Version": "3.1-164",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "graphics",
@@ -781,7 +788,7 @@
         "stats",
         "utils"
       ],
-      "Hash": "8d1938040a05566f4f7a14af4feadd6b"
+      "Hash": "a623a2239e642806158bc4dc3f51565d"
     },
     "nloptr": {
       "Package": "nloptr",
@@ -1123,6 +1130,17 @@
         "R"
       ],
       "Hash": "1de7ab598047a87bba48434ba35d497d"
+    },
+    "sampling": {
+      "Package": "sampling",
+      "Version": "2.10",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "MASS",
+        "lpSolve"
+      ],
+      "Hash": "efbfce0667362d0ac769f920edbfb2c8"
     },
     "scales": {
       "Package": "scales",
