@@ -56,31 +56,28 @@ weight_descr_stat <- function(x, digits = 2) {
 # WeightingQCForm-4_HH_LVA
 
 # SDIF - final
-dat_sdif_old <- fread(
-  file = "result/CY2_Final_SDIF_LVA.csvy",
-  yaml = TRUE
-)
-dat_sdif_old[, .N]
-dat_sdif_old[, map(.SD, class), .SDcols = c("CASEID", "PERSID")]
+dat_sdif <- haven::read_sas(
+  data_file = "data-weights/SAS/SAS7BDAT/psdlvams.sas7bdat"
+) |> setDT()
 
-dat_sdif <- fread(
-  file = "data-weights/PSDLVAMS.csv",
-  dec = ",",
-  colClasses = list(numeric = c("CASEID", "PERSID"))
-) |> setnames(toupper)
-dat_sdif[, .N]
-# map(dat_sdif, class)
-dat_sdif[, map(.SD, class), .SDcols = c("CASEID", "PERSID")]
-
-
-setdiff(names(dat_sdif), names(dat_sdif_old))
-setdiff(names(dat_sdif_old), names(dat_sdif))
 
 # WIF
 dat_wif <- haven::read_sas(
   data_file = "data-weights/WIF_QCChecks_LVA.sas7bdat"
 ) |> setDT()
-dat_wif[, .N]
+
+# SPRWT0
+dat_sprwt <- haven::read_sas(
+  data_file = "data-weights/sprwt.sas7bdat"
+) |> setDT()
+
+dat_wif <- merge(
+  x = dat_wif,
+  y = dat_sprwt,
+  by = "PERSID",
+  all.x = TRUE
+)
+rm(dat_sprwt)
 
 intersect(names(dat_wif), names(dat_sdif))
 
@@ -133,6 +130,7 @@ dat_sdif[, .(CASEID, DISP_SCR, hh_cat)] |> unique()
 
 dat_sdif_du <- unique(x = dat_sdif, by = "CASEID")
 dat_sdif_du[, .N]
+
 
 # Include all sampled households except for those known to be ineligible
 # (all except for DISP_SCR=19, 22, 26, 27, 28)
@@ -486,7 +484,9 @@ tab_w4_5_5 <- tab_w4_5_5[variable != "WGT_SUM" | value > 0]
 tab_w4_5_5[variable == "WGT_SUM" & value == 0]
 
 
-tab_w4_5_5[, variable := factor(x = variable, levels = c("N", "ADJ_FACTOR", "WGT_SUM"))]
+tab_w4_5_5[, variable := factor(
+  x = variable, levels = c("N", "ADJ_FACTOR", "WGT_SUM")
+)]
 tab_w4_5_5[, levels(variable)]
 setorder(tab_w4_5_5, HHNRCELL, hh_cat, variable)
 
@@ -598,6 +598,7 @@ dat_pers[, .N, .(HHBWT0   = !is.na(HHBWT0),
                  SPBWT0   = !is.na(SPBWT0),
                  SPNRWT0  = !is.na(SPNRWT0),
                  SPLNRWT0 = !is.na(SPLNRWT0),
+                 SPRWT0   = !is.na(SPRWT0),
                  SPTWT0   = !is.na(SPTWT0),
                  SPFWT0   = !is.na(SPFWT0))]
 
@@ -664,9 +665,55 @@ dat_pers[!is.na(pers_cat), .N, keyby = .(pers_cat, DISP_CIBQ)]
 dat_pers[, .N, keyby = .(hh_cat, pers_cat)]
 
 
+# Screener
+
+# W_k
+dat_pers[, W_k := 1 / PROB_PSU / PROB_HH]
+dat_pers[, all.equal(HHBWT0, W_k, check.attributes = FALSE)]
+
+dat_pers[, .(n_hh = sum(1 / pers_n), n_pers = .N), keyby = .(hh_cat)]
+
+
+# F_1
+grep("CELL$", names(dat_pers), value = TRUE)
+
+dat_pers[, S1_L  := sum(W_k * (hh_cat == "L")),  by = .(HHUNKCELL)]
+dat_pers[, S1_R  := sum(W_k / pers_n * (hh_cat == "R")), by = .(HHUNKCELL)]
+dat_pers[, S1_NR := sum(W_k * (hh_cat == "NR")), by = .(HHUNKCELL)]
+dat_pers[, S1_I  := sum(W_k * (hh_cat == "I")),  by = .(HHUNKCELL)]
+dat_pers[, S1_U  := sum(W_k * (hh_cat == "U")),  by = .(HHUNKCELL)]
+
+dat_pers[
+  hh_cat == "I",
+  F_1 := (S1_L + S1_R + S1_NR + S1_I + S1_U) / (S1_L + S1_R + S1_NR + S1_I)
+]
+dat_pers[
+  hh_cat == "U",
+  F_1 := (S1_L + S1_R + S1_NR) / (S1_L + S1_R + S1_NR + S1_I)
+]
+dat_pers[hh_cat %in% c("L", "R", "NR"), F_1 := 1]
+
+dat_pers[, all.equal(HHUEWT0, W_k * F_1, check.attributes = FALSE)]
+
+
+# F_2
+grep("CELL$", names(dat_pers), value = TRUE)
+
+dat_pers[, S2_R  := sum(W_k * F_1 / pers_n * (hh_cat == "R")), by = .(HHNRCELL)]
+dat_pers[, S2_NR := sum(W_k * F_1 * (hh_cat == "NR")), by = .(HHNRCELL)]
+dat_pers[, S2_U  := sum(W_k * F_1 * (hh_cat == "U")),  by = .(HHNRCELL)]
+
+dat_pers[hh_cat %in% c("L", "I"), F_2 := 1]
+dat_pers[hh_cat %in% c("R"), F_2 := (S2_R + S2_NR + S2_U) / S2_R]
+dat_pers[hh_cat %in% c("NR", "U"), F_2 := 0]
+
+dat_pers[, all.equal(HHNRWT0, W_k * F_1 * F_2, check.attributes = FALSE)]
+
+
+
 # Base weight (SPBWT0)
-if (dat_pers[, !isTRUE(all.equal(SPBWT0, round(HHNRWT0 / PROB_PERS, 6),
-                                 check.attributes = FALSE))]) {
+dat_pers[, W_l := W_k * F_1 * F_2 / PROB_PERS]
+if (dat_pers[, !isTRUE(all.equal(SPBWT0, W_l, check.attributes = FALSE))]) {
   stop("Check SPBWT0")
 }
 # TRUE
@@ -690,25 +737,18 @@ dat_pers[, .N, keyby = .(pers_cat = !is.na(pers_cat),
 #          .(CASEID, PERSID, DISP_SCR, DISP_CIBQ, DISP_MAIN, DISP_DS, QCFLAG)]
 
 # dat_pers[, c("S_R", "S_NR", "S_D") := NULL]
-dat_pers[!is.na(SPNRCELL),
-         S_R  := sum(SPBWT0 * (pers_cat == "R")),
-         by = .(SPNRCELL)]
-dat_pers[!is.na(SPNRCELL),
-         S_NR := sum(SPBWT0 * (pers_cat == "NR")),
-         by = .(SPNRCELL)]
-dat_pers[!is.na(SPNRCELL),
-         S_D  := sum(SPBWT0 * (pers_cat == "D")),
-         by = .(SPNRCELL)]
+dat_pers[!is.na(SPNRCELL), S3_R  := sum(W_l * (pers_cat == "R")),  by = .(SPNRCELL)]
+dat_pers[!is.na(SPNRCELL), S3_NR := sum(W_l * (pers_cat == "NR")), by = .(SPNRCELL)]
+dat_pers[!is.na(SPNRCELL), S3_D  := sum(W_l * (pers_cat == "D")),  by = .(SPNRCELL)]
 # dat_pers[, class(S_R)]
 
 dat_pers[pers_cat %in% c("L1", "L2", "I"), F_3 := 1]
-dat_pers[pers_cat %in% "R", F_3 := (S_R + S_NR + S_D) / S_R]
+dat_pers[pers_cat %in% c("R"), F_3 := (S3_R + S3_NR + S3_D) / S3_R]
 dat_pers[pers_cat %in% c("NR", "D"), F_3 := 0]
 
 dat_pers[!is.na(pers_cat), as.list(summary(F_3)), keyby = .(pers_cat)]
 
-if (!isTRUE(dat_pers[, all.equal(SPNRWT0, round(SPBWT0 * F_3, 6),
-                                 check.attributes = FALSE)])) {
+if (!isTRUE(dat_pers[, all.equal(SPNRWT0, W_l * F_3, check.attributes = FALSE)])) {
   stop("Check SPNRWT0")
 }
 
@@ -721,6 +761,16 @@ dat_pers[pers_cat == "R", weight_descr_stat(SPNRWT0)]
 
 # Literacy-related nonresponse adjustment (SPLNRWT0)
 
+# (LL: The factor F_4 is actually calculated using screener base weights
+# (note the S' instead of S in the formula,
+# where S' is the sum of screener base weights
+# as explained in the footnote under the table).
+# F_4 is calculated at the household level including L, L1 and L2 cases.
+# If a household has multiple L1/L2 persons,
+# it will be counted as one household in this calculation.
+# Then the factor F_4 is applied to the person-level weights.
+# Please see sections 2.3.2.2 and 2.3.3.3 for some explanation.)
+
 names(dat_pers)
 
 dat_pers[, .N, keyby = .(SPLNRCELL)]
@@ -732,23 +782,45 @@ dat_pers[, map(.SD, sum, na.rm = TRUE),
          .SDcols = c("SPBWT0", "SPNRWT0", "SPLNRWT0"),
          keyby = .(pers_cat)][, F_4 := SPLNRWT0 / SPNRWT0][]
 
-dat_pers[, Sp_L  := sum(HHBWT0 * (hh_cat == "L"))]
-dat_pers[!is.na(SPLNRCELL),
-         Sp_L1 := sum(HHBWT0 / pers_n * (pers_cat == "L1")),
-         by = .(SPLNRCELL)]
-dat_pers[!is.na(SPLNRCELL),
-         Sp_L2 := sum(HHBWT0 / pers_n * (pers_cat == "L2")),
-         by = .(SPLNRCELL)]
+dat_pers[
+  pers_n > 1,
+  .(pers_cat = paste(sort(pers_cat), collapse = "-")),
+  by = .(CASEID)
+][, .N, keyby = .(pers_cat)]
+# There is only 1 HH with 2 sampled persons and both with category L2
 
-dat_pers[pers_cat %in% c("I", "R"), F_4 := 1]
-dat_pers[pers_cat %in% c("L1"), F_4 := (Sp_L + Sp_L1 + Sp_L2) / Sp_L1]
+dat_pers[, hh_L1 := hh_cat == "R" & any(pers_cat == "L1"), by = .(CASEID)]
+dat_pers[, hh_L2 := hh_cat == "R" & any(pers_cat == "L2"), by = .(CASEID)]
+
+dat_F_4 <- dat_pers[
+  hh_cat == "L" | hh_L1 | hh_L2,
+  .(CASEID, HHBWT0, pers_n, SPLNRCELL, hh_cat, hh_L1, hh_L2)
+] |> unique()
+
+dat_F_4[, S4_L  := sum(HHBWT0 * (hh_cat == "L"))]
+dat_F_4[, S4_L1 := sum(HHBWT0 * (hh_L1))]
+dat_F_4[, S4_L2 := sum(HHBWT0 * (hh_L2))]
+dat_F_4[, hh_F_4 := (S4_L + S4_L1 + S4_L2) / S4_L1]
+
+dat_F_4[, .(CASEID, S4_L, S4_L1, S4_L2, hh_F_4)]
+
+dat_pers <- merge(
+  x = dat_pers,
+  y = dat_F_4[, .(CASEID, S4_L, S4_L1, S4_L2, hh_F_4)],
+  by = "CASEID",
+  all.x = TRUE
+)
+dat_pers[hh_cat == "L" | hh_L1 | hh_L2, .(CASEID, S4_L, S4_L1, S4_L2, hh_F_4)]
+
+dat_pers[pers_cat %in% c("I", "R"),        F_4 := 1]
+dat_pers[pers_cat %in% c("L1"),            F_4 := hh_F_4]
 dat_pers[pers_cat %in% c("L2", "NR", "D"), F_4 := 0]
 
-dat_pers[!is.na(SPLNRCELL), .(SPLNRCELL, Sp_L, Sp_L1, Sp_L2, F_4)]
+dat_pers[!is.na(SPLNRCELL), .(SPLNRCELL, S4_L, S4_L1, S4_L2, hh_F_4, F_4)]
 
 dat_pers[!is.na(pers_cat), as.list(summary(F_4)), keyby = .(pers_cat)]
 
-if (!isTRUE(dat_pers[, all.equal(SPLNRWT0, round(SPNRWT0 * F_4, 6),
+if (!isTRUE(dat_pers[, all.equal(SPLNRWT0, W_l * F_3 * F_4,
                                  check.attributes = FALSE)])) {
   stop("Check SPLNRWT0")
 }
@@ -827,9 +899,19 @@ dat_pers[
 
 dat_pers[pers_cat %in% c("R", "L1"), summary(F_5)]
 
-dat_pers[, SPRWT0 := SPLNRWT0 * F_5]
+dat_pers[, all.equal(SPRWT0, W_l * F_3 * F_4 * F_5, check.attributes = FALSE)]
+
+dat_pers[, SPRWT0_test := W_l * F_3 * F_4 * F_5]
+dat_pers[, all.equal(SPRWT0, SPRWT0_test, check.attributes = F)]
+
+dat_pers[, SPRWT0_abs_diff := abs(SPRWT0_test - SPRWT0)]
+dat_pers[pers_cat %in% c("R", "L1")][SPRWT0_abs_diff > .01][
+  order(-SPRWT0_abs_diff),
+  .(CASEID, PERSID, SPRWT0, SPRWT0_test, SPRWT0_abs_diff)
+]
 
 dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPRWT0)]
+dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPRWT0_test)]
 
 
 
@@ -841,6 +923,12 @@ dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPRWT0)]
 # There is one trimming group.
 # The trimming cutoff is 867.936 (= 6.94 *median of the initial raked weight).
 # Any weights greater than the cutoff were trimmed to that value.
+
+# We decided not to use 3.5*SQRT(1+CV^2) to define the trimming cutoff,
+# since it trimmed too many cases (>200).
+# Instead, we increased the cutoff to the point where
+# sum(SPTWT0)/sum(SPRWT0) = 0.98.
+# I added this explanation to table 8.1
 
 dat_pers[, as.character(max(SPTWT0, na.rm = T))]
 867.936143169207 / 6.94
@@ -875,16 +963,18 @@ dat_pers[SPRWT0 > cutoff, .N]
 dat_pers[SPRWT0 <= cutoff, F_6 := 1]
 dat_pers[SPRWT0 >  cutoff, F_6 := cutoff / SPRWT0]
 
-dat_pers[, SPTWT0_test := SPRWT0 * F_6]
+dat_pers[, SPTWT0_test := W_l * F_3 * F_4 * F_5 * F_6]
 dat_pers[, all.equal(SPTWT0, SPTWT0_test, check.attributes = F)]
 dat_pers[, SPTWT0_abs_diff := abs(SPTWT0_test - SPTWT0)]
 dat_pers[pers_cat %in% c("R", "L1")][SPTWT0_abs_diff > .01][
-  order(-SPTWT0_abs_diff), .(CASEID, PERSID, SPRWT0, SPTWT0, SPTWT0_abs_diff)
+  order(-SPTWT0_abs_diff),
+  .(CASEID, PERSID, SPTWT0, SPTWT0_test, SPTWT0_abs_diff)
 ]
 
 dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPTWT0)]
 dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPTWT0_test)]
 
+dat_pers[pers_cat %in% c("R", "L1"), sum(SPTWT0) / sum(SPRWT0)]
 
 
 # Final calibrated sample person weight (SPFWT0)
@@ -901,7 +991,7 @@ dat_pers[
 
 dat_pers[pers_cat %in% c("R", "L1"), summary(F_7)]
 
-dat_pers[, SPFWT0_test := SPTWT0 * F_7]
+dat_pers[, SPFWT0_test := W_l * F_3 * F_4 * F_5 * F_6 * F_7]
 dat_pers[, all.equal(SPFWT0, SPFWT0_test, check.attributes = F)]
 dat_pers[, SPFWT0_abs_diff := abs(SPFWT0_test - SPFWT0)]
 dat_pers[pers_cat %in% c("R", "L1")][SPFWT0_abs_diff > .01][
@@ -910,6 +1000,7 @@ dat_pers[pers_cat %in% c("R", "L1")][SPFWT0_abs_diff > .01][
 ]
 
 dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPFWT0)]
+dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPFWT0_test)]
 
 
 # Table 1
@@ -921,19 +1012,19 @@ tab_SPRWT0   <- dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPRWT0)]
 tab_SPTWT0   <- dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPTWT0)]
 tab_SPFWT0   <- dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPFWT0)]
 
-setnames(tab_SPBWT0, "Value", "SPBWT0")
-setnames(tab_SPNRWT0, "Value", "SPNRWT0")
+setnames(tab_SPBWT0,   "Value", "SPBWT0")
+setnames(tab_SPNRWT0,  "Value", "SPNRWT0")
 setnames(tab_SPLNRWT0, "Value", "SPLNRWT0")
-setnames(tab_SPRWT0, "Value", "SPRWT0")
-setnames(tab_SPTWT0, "Value", "SPTWT0")
-setnames(tab_SPFWT0, "Value", "SPFWT0")
+setnames(tab_SPRWT0,   "Value", "SPRWT0")
+setnames(tab_SPTWT0,   "Value", "SPTWT0")
+setnames(tab_SPFWT0,   "Value", "SPFWT0")
 
-setkey(tab_SPBWT0, `Descriptive statistics`)
-setkey(tab_SPNRWT0, `Descriptive statistics`)
+setkey(tab_SPBWT0,   `Descriptive statistics`)
+setkey(tab_SPNRWT0,  `Descriptive statistics`)
 setkey(tab_SPLNRWT0, `Descriptive statistics`)
-setkey(tab_SPRWT0, `Descriptive statistics`)
-setkey(tab_SPTWT0, `Descriptive statistics`)
-setkey(tab_SPFWT0, `Descriptive statistics`)
+setkey(tab_SPRWT0,   `Descriptive statistics`)
+setkey(tab_SPTWT0,   `Descriptive statistics`)
+setkey(tab_SPFWT0,   `Descriptive statistics`)
 
 tab1 <- Reduce(f = merge, x = list(
   tab_SPBWT0,
@@ -962,12 +1053,12 @@ tab_SPTWT0   <- dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPTWT0),
 tab_SPFWT0   <- dat_pers[pers_cat %in% c("R", "L1"), weight_descr_stat(SPFWT0),
                          keyby = .(REGION)]
 
-setnames(tab_SPBWT0, "Value", "SPBWT0")
-setnames(tab_SPNRWT0, "Value", "SPNRWT0")
+setnames(tab_SPBWT0,   "Value", "SPBWT0")
+setnames(tab_SPNRWT0,  "Value", "SPNRWT0")
 setnames(tab_SPLNRWT0, "Value", "SPLNRWT0")
-setnames(tab_SPRWT0, "Value", "SPRWT0")
-setnames(tab_SPTWT0, "Value", "SPTWT0")
-setnames(tab_SPFWT0, "Value", "SPFWT0")
+setnames(tab_SPRWT0,   "Value", "SPRWT0")
+setnames(tab_SPTWT0,   "Value", "SPTWT0")
+setnames(tab_SPFWT0,   "Value", "SPFWT0")
 
 setkey(tab_SPBWT0,   REGION, `Descriptive statistics`)
 setkey(tab_SPNRWT0,  REGION, `Descriptive statistics`)
