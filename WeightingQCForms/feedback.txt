@@ -41,5 +41,8 @@ How did you get the cutoff value 867.936? Median raked weight is 125.0868 (the s
 
 Weighting International File (WIF) for QC LVA
 
+- Vai "Native Born" nozīmē dzimis Latvijā?
+
 - Rename VEMETHODN as VEMETHOD.
 - It would be useful to have SPRWT0 in the WIF_QCChecks data file.
+
