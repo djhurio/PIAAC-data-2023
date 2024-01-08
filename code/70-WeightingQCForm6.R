@@ -326,7 +326,7 @@ grep("^SPFWT[1-9][0-9]?$", names(dat_pers), value = TRUE) |> length()
 # dt <- copy(dat_pers)
 
 est_var <- function(y, dt = dat_pers, k = 0.3) {
-
+  
   # Full sample estimates
   dat_var_full <- dt[
     ,
@@ -359,7 +359,7 @@ est_var <- function(y, dt = dat_pers, k = 0.3) {
   
   dat_var <- dat_var[
     ,
-    .(se = sqrt(sum((weight_freq_rep - weight_freq) ^ 2) / g / (1 - k) ^ 2)),
+    .(var = sum((weight_freq_rep - weight_freq) ^ 2) / g / (1 - k) ^ 2),
     keyby = c(y)
   ]
   
@@ -370,7 +370,19 @@ est_var <- function(y, dt = dat_pers, k = 0.3) {
   )
   
   dat_var_res[, variable := y]
+  
+  dat_var_res[, se := sqrt(var)]
   dat_var_res[, cv := se / weight_freq * 100]
+  
+  # Design effect
+  n <- dat_var_res[, sum(samp_size)]
+  N <- dat_var_res[, sum(weight_freq)]
+  
+  dat_var_res[, p := weight_freq / N]
+  dat_var_res[, s2 := N / (N - 1) * p * (1 - p)]
+  dat_var_res[, var_srs := N ^ 2 * (1 - n / N) * s2 / n]
+  dat_var_res[, deff := var / var_srs]
+  
   setnames(dat_var_res, y, "value")
   setcolorder(dat_var_res, c("variable", "value"))
   
