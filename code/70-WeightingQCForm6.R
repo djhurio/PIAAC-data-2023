@@ -1,5 +1,8 @@
 # Weighting QC Forms W-6
 
+# Lib
+library(survey)
+
 # Options
 options(max.print = 10e3)
 getOption("max.print")
@@ -248,6 +251,7 @@ dat_bq[
 ]
 dat_bq[, .N, keyby = .(y_edu, b2_q01lv)]
 dat_bq[, .N, keyby = .(y_edu)]
+dat_bq[, class(y_edu)]
 
 
 # Country of birth
@@ -284,6 +288,15 @@ dat_pers <- merge(
   all.x = TRUE
 )
 
+# stop()
+
+dat_pers[, .(.N, sum(SPFWT0)), keyby = .(y_edu)]
+dat_pers[, .(.N, sum(SPFWT0)), keyby = .(y_natb)]
+dat_pers[, .(.N, sum(SPFWT0)), keyby = .(y_ecact)]
+
+dat_pers[, y_edu   := addNA(y_edu)]
+dat_pers[, y_natb  := addNA(y_natb)]
+dat_pers[, y_ecact := addNA(y_ecact)]
 
 dat_pers[, .(.N, sum(SPFWT0)), keyby = .(y_edu)]
 dat_pers[, .(.N, sum(SPFWT0)), keyby = .(y_natb)]
@@ -335,6 +348,8 @@ est_var <- function(y, dt = dat_pers, k = 0.3) {
     keyby = c(y)
   ]
   
+  dat_var_full[, p_est := 100 * prop.table(weight_freq)]
+  
   dat_var_repl <- melt.data.table(
     data = dt,
     id.vars = c("CASEID", "PERSID", y),
@@ -347,6 +362,8 @@ est_var <- function(y, dt = dat_pers, k = 0.3) {
       weight_freq_rep = as.integer(round(sum(REPWGT)))),
     keyby = c("REPLICATE", y)
   ]
+  
+  dat_var_repl[, p_est_rep := 100 * prop.table(weight_freq_rep), by = .(REPLICATE)]
 
   dat_var <- merge(
     x = dat_var_repl,
@@ -359,7 +376,7 @@ est_var <- function(y, dt = dat_pers, k = 0.3) {
   
   dat_var <- dat_var[
     ,
-    .(var = sum((weight_freq_rep - weight_freq) ^ 2) / g / (1 - k) ^ 2),
+    .(var = sum((p_est_rep - p_est) ^ 2) / g / (1 - k) ^ 2),
     keyby = c(y)
   ]
   
@@ -372,15 +389,16 @@ est_var <- function(y, dt = dat_pers, k = 0.3) {
   dat_var_res[, variable := y]
   
   dat_var_res[, se := sqrt(var)]
-  dat_var_res[, cv := se / weight_freq * 100]
+  dat_var_res[, cv := se / p_est * 100]
   
   # Design effect
   n <- dat_var_res[, sum(samp_size)]
   N <- dat_var_res[, sum(weight_freq)]
   
-  dat_var_res[, p := weight_freq / N]
+  dat_var_res[, p := prop.table(weight_freq)]
   dat_var_res[, s2 := N / (N - 1) * p * (1 - p)]
-  dat_var_res[, var_srs := N ^ 2 * (1 - n / N) * s2 / n]
+  # dat_var_res[, var_srs := 100 ^ 2 * (1 - n / N) * s2 / n]
+  dat_var_res[, var_srs := 100 ^ 2 * s2 / n]
   dat_var_res[, deff := var / var_srs]
   
   setnames(dat_var_res, y, "value")
@@ -392,9 +410,45 @@ est_var <- function(y, dt = dat_pers, k = 0.3) {
 y_variables <- grep("^y_", names(dat_pers), value = TRUE)
 y_variables
 
-tab_w6_3 <- map_dfr(.x = y_variables, .f = est_var)
+tab_w6_3a <- map_dfr(.x = y_variables, .f = est_var)
+
+
+
+# If you use R, please see the example R code below for calculating design effects for CI_AGE_CAT and CI_GENDER. You will need to install package “survey”.
+
+dat_pers[, .N]
+dat_pers[, .N, keyby = .(WEIGHTFLG)]
+# check the number of records here, should only include records with WEIGHTFLG ==1
+
+NREP <- 80 # number of replicates
+reps <- c(1:NREP)
+
+Data_s <- svrepdesign(
+  data = as.data.frame(dat_pers),
+  type = "Fay",
+  rho = 0.3,
+  weights = dat_pers$SPFWT0,
+  repweights = dat_pers[, .SD, .SDcols = paste0("SPFWT", reps)],
+  combined.weights = TRUE
+)
+
+y_variables
+
+tab_w6_3b <- svymean(
+  x = ~ y_gender + y_age + y_edu + y_natb + y_ecact +
+    y_rakedim1 + y_rakedim2 + y_rakedim3,
+  design = Data_s,
+  deff = TRUE
+) |> as.data.table(keep.rownames = TRUE)
+
+tab_w6_3b[, mean := 100 * mean]
+tab_w6_3b[, SE := 100 * SE]
+
+options("openxlsx2.minWidth" = 15)
+options("openxlsx2.numFmt" = "0.00")
+
 openxlsx2::write_xlsx(
-  x = tab_w6_3,
+  x = cbind(tab_w6_3a, tab_w6_3b),
   file = "WeightingQCForms/tab_w6_3.xlsx"
 )
 
@@ -453,7 +507,7 @@ dat_pers <- merge(
   all.x = TRUE
 )
 
-dat_pers[, region := factor(x = REGION, levels = 1:6, labels = c(
+dat_pers[, region_ := factor(x = REGION, levels = 1:6, labels = c(
   "Rīgas statistiskais reģions",
   "Pierīgas statistiskais reģions",
   "Vidzemes statistiskais reģions",
@@ -462,7 +516,7 @@ dat_pers[, region := factor(x = REGION, levels = 1:6, labels = c(
   "Latgales statistiskais reģions"
 ))]
 
-dat_pers[, valoda_pirma_a2_q04a1lv := factor(
+dat_pers[, valoda_pirma_a2_q04a1lv_ := factor(
   x = a2_q04a1lv,
   levels = 1:9,
   labels = c(
@@ -478,7 +532,7 @@ dat_pers[, valoda_pirma_a2_q04a1lv := factor(
   )
 )]
 
-dat_pers[, valoda_majas_a2_q04blv := factor(
+dat_pers[, valoda_majas_a2_q04blv_ := factor(
   x = a2_q04blv,
   levels = 1:7,
   labels = c(
@@ -492,21 +546,47 @@ dat_pers[, valoda_majas_a2_q04blv := factor(
   )
 )]
 
-dat_pers[, .N, keyby = .(region)]
-dat_pers[, .N, keyby = .(valoda_pirma_a2_q04a1lv)]
-dat_pers[, .N, keyby = .(valoda_majas_a2_q04blv)]
+dat_pers[, .N, keyby = .(region_)]
+dat_pers[, .N, keyby = .(valoda_pirma_a2_q04a1lv_)]
+dat_pers[, .N, keyby = .(valoda_majas_a2_q04blv_)]
 
-tab_est <- map_dfr(
-  .x = c(
-    "region",
-    "valoda_pirma_a2_q04a1lv",
-    "valoda_majas_a2_q04blv"
-  ),
-  .f = est_var
+# dat_pers[, region := addNA(region)]
+dat_pers[, valoda_pirma_a2_q04a1lv_ := addNA(valoda_pirma_a2_q04a1lv_)]
+dat_pers[, valoda_majas_a2_q04blv_  := addNA(valoda_majas_a2_q04blv_)]
+
+dat_pers[, .N, keyby = .(region_)]
+dat_pers[, .N, keyby = .(valoda_pirma_a2_q04a1lv_)]
+dat_pers[, .N, keyby = .(valoda_majas_a2_q04blv_)]
+
+# tab_est <- map_dfr(
+#   .x = c(
+#     "region",
+#     "valoda_pirma_a2_q04a1lv",
+#     "valoda_majas_a2_q04blv"
+#   ),
+#   .f = est_var
+# )
+# 
+# tab_est <- tab_est[!is.na(value) & !value %in% 97:98]
+# tab_est
+
+Data_s <- svrepdesign(
+  data = as.data.frame(dat_pers),
+  type = "Fay",
+  rho = 0.3,
+  weights = dat_pers$SPFWT0,
+  repweights = dat_pers[, .SD, .SDcols = paste0("SPFWT", reps)],
+  combined.weights = TRUE
 )
 
-tab_est <- tab_est[!is.na(value) & !value %in% 97:98]
-tab_est
+tab_est <- svymean(
+  x = ~ region_ + valoda_pirma_a2_q04a1lv_ + valoda_majas_a2_q04blv_,
+  design = Data_s,
+  deff = TRUE
+) |> as.data.table(keep.rownames = TRUE)
+
+tab_est[, mean := 100 * mean]
+tab_est[, SE := 100 * SE]
 
 openxlsx2::write_xlsx(
   x = tab_est,
